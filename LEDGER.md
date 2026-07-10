@@ -2,7 +2,7 @@
 
 **Plan:** `docs/superpowers/plans/2026-07-09-overnight-studies-1-2.md` (read it first; §2 has all external facts pre-baked — do not re-discover)
 **Protocol:** agentic-loop. Orchestrator (Opus) never reads source / writes code. Implementer: GPT5.6-High via `codex:codex-rescue`. Reviewer: `ce-adversarial-reviewer` every task; + `ce-correctness-reviewer` on T3, T7.
-**Budget state:** $64 credits, auto-recharge on, ceiling $180 (pause line, G3 at $178 projected). Spend so far: ~$0.10 (exploration probes).
+**Budget state (2026-07-10):** meter cumulative **$64.42** (T1 partial pull). Operator recharged CoinAPI balance to **$127.27** (auto-recharge is NOT firing despite being enabled — flag to CoinAPI support). $180 policy ceiling / $178 G3 pause unchanged → ~$113 meter headroom. Remaining planned spend: T1-resume ~$6.24 + Study 2 (T5 cheap + T7 ≤$40) ⇒ meter lands ~$110, under balance and cap.
 
 **CoinAPI limits (operator-confirmed):** max concurrency **4**, **160 RPM** (~2.6 req/s), backoff on 429. Put these in every T5/T7 pull brief.
 
@@ -13,8 +13,8 @@
 | task | implementer | status | commit SHA | check | verdict | follow-ups | decision? |
 |---|---|---|---|---|---|---|---|
 | T0 scaffold + ffs3 client + spend meter | codex GPT5.6-High | DONE | cbda9c4 | pytest 5/5 GREEN | LOW (A1/A2/A4 fixed; L1/L2 hygiene) | A3(GiB→G1) A5(unknown-SKU price→pre-T5) A6 A7 L1 L2 | none |
-| T1 study-1 pull | codex GPT5.6-High | DONE-PARTIAL | (pending) | manifest 11,828/16,763; idempotence 3/3; spend $64.42 | done-check met; credit lockout | 4,935 L4-trade files unpulled ($6.24) resume when credits back | G1 ~settled (see below) |
-| T2 loaders + calendars | codex GPT5.6-High | queued | — | — | — | — | none |
+| T1 study-1 pull | codex GPT5.6-High | DONE-PARTIAL | 45ca33f | manifest 11,828/16,763; idempotence 3/3; spend $64.42 | done-check met; credit lockout | 4,935 L4-trade files unpulled ($6.24) resume when credits back | G1 ~settled (see below) |
+| T2 loaders + book + calendars | codex GPT5.6-High | DONE | (pending) | 9/9 GREEN; F1/F2/F3 fixed; checkpoints byte-verified | LOW (A1 one-sided-L1 → T3 note) | F4(date-stamp keyed on dataset name) | none |
 | T3 markout engine | codex GPT5.6-High | queued | — | — | — | fee bps `assumed` | none |
 | T4 run + study-1 report | codex GPT5.6-High | queued | — | — | — | — | none |
 | T5 study-2 cheap data (≤$45) | codex GPT5.6-High | queued | — | — | — | oracle GOLD wart demo | after G1 |
@@ -35,6 +35,11 @@
 - **A7 (LOW, ffs3.py:335-343):** manifest pause is all-or-nothing; no partial pull to the line + no RESUME.md write, contra G3 text. Only bites if we approach $178 (not expected tonight). Revisit at G3/T8.
 - **L1 (LOW, tests/test_ffs3.py:31-41):** A1 lost-update test is sequential — exercises the on-disk re-read but not flock mutual exclusion (a reverted flock w/ re-read kept would still pass). flock code inspected-correct. Add a truly concurrent (fork) test if revisiting the meter.
 - **L2 (LOW, tests/fixtures/list_objects_trades_2026070900.xml):** orphaned after XML-parser removal. KEPT intentionally as a real captured ListObjects reference (documents live S3 schema for T1/T2). Delete if unused by end of run.
+
+## T3 handoff note (from T2 review)
+- **One-sided L1 rows (A1):** the book reconstructor can emit a transient one-sided L1 row (`best_bid` or `best_ask` = None) when a SNAPSHOT image spans multiple `time_exchange` values (bid/ask rows at different ts). Honest no-look-ahead artifact, never crossed. **T3 MUST skip rows where either side is None** when computing spread/microprice/markout — do not treat None as 0 or compute against a one-sided book.
+- Date-attached book timestamps AND full-ISO trade/quote timestamps are produced as **tz-NAIVE `Datetime("ns")`** (loaders.py:166). T3 MUST treat them as **UTC** when joining to NYSE/KRX session labels (calendars are tz-aware). Do not let a naive-vs-aware mismatch silently mislabel segments.
+- F4 (deferred, LOW): `loaders.py:158-164` L2 date-stamping keys on dataset name (`LIMITBOOK_FULL`+l2 → prefix partition date). Loud crash on schema drift (not silent). Harden to sniff timestamp shape if revisited.
 
 ## Schema corrections (trust the file, not the doc — design rule §1)
 - **Quotes header (verified on disk, differs from plan §2.3):** real L2-era Quotes = `id_site_coinapi;time_exchange;time_coinapi;ask_px;ask_sx;bid_px;bid_sx` (leading id col; `ask_px/ask_sx/bid_px/bid_sx` not `ask_price/ask_size`; `time_exchange` is full ISO). T2 loaders parse by actual header. Resolved by orchestrator (plan §2.3 itself says "inspect first row"); no operator needed. Confirm L4-era quotes header when those files land.
