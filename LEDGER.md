@@ -18,8 +18,9 @@
 | T3 markout engine | codex GPT5.6-High | DONE | 8d424a4 | 9/9 GREEN; correctness CLEAN + adversarial re-review CLEAN | CLEAN (ADV-1/ADV-2 fixed) | ADV-3 same-ts drop; fee 1.5bps assumed; funding=T4 input | none |
 | T4 run + study-1 report | codex GPT5.6-High | DONE | 2f23378 | 2.20M fills; report↔parquet CLEAN (4 cells recomputed); no verdicts; runner recovered+params doc'd | MED T4-1 fixed (runner in VCS); T4-2/T4-3 LOW | L4 quotes-as-L1 skipped; 6 corrupt L4 files 2026-05-27; smoke-test hung (runner self-verified: valid CLI+engine calls; reviewer verified parquet) | none |
 | T5 study-2 cheap data (≤$45) | codex GPT5.6-High | DONE | b9b4e63 | 6/6 GREEN; spend reconciles $15.82; funding 0 gaps | LOW (A5 clean; T5-A1/A2) | T5-A1 assumed-price runtime marker; T5-A2 GOLD contemporaneous marks; verify HL feed pricing vs billing | A5 resolved; G2→T6 |
-| T6 liquidation tagging | codex GPT5.6-High | running | — | — | — | G2 auto-switch; TDD burst/calm | G2 |
-| T7 event-window book pulls (≤$40) + anatomy | codex GPT5.6-High | queued | — | — | — | — | none |
+| T6 liquidation tagging | codex GPT5.6-High | DONE | 59cb384 | 7/7 GREEN; adv-review FIX-FIRST resolved (5 items) | HIGH(tautological look-ahead test)→FIXED; 3×MED→FIXED; T6-1 LOW deferred | G2=ABSENT→proxy-tagged |
+| — G2 finding | — | — | — | HLSYSTEMEVENTS: 0 liquidation/ADL/forced-close across 1,070,342 rows (498 files) | 14 event_types = JSON action types exactly | proxy fallback (pre-registered) |
+| T7 event-window book pulls (≤$40) + anatomy | codex GPT5.6-High | NEXT | — | — | — | +ce-correctness-reviewer (money math); use 8/640 tier | none |
 | T8 study-2 report + close-out | codex GPT5.6-High | queued | — | — | — | — | none |
 
 ## Escalations / decisions log
@@ -34,6 +35,13 @@
   - **Almost all NEGATIVE ~−2 to −3 bps** → passive making these index perps loses net of fees in-sample. Off-hours/weekend **not robustly better than RTH**: liquid markets (SP500, cash:USA500, XYZ100) show near-identical segments (SP500 weekend −1.86 marginally > RTH −2.00, CIs just separate but tiny magnitude); thin flx markets (USA500, USA100) are too noisy (wide CIs, low G, some CIs cross 0). Leans AGAINST prior #1, but that is the operator's call — report states numbers only (no verdict), correct per §1.7.
 - **Era-overlap cross-val (REAL divergence, reviewer-confirmed by raw recount):** L2/L4 trade-count agreement 85–93% for liquid markets, but **22–25% for flx:USA500 / flx:USA100** — genuine L4 (wallet-attributed) feed sparsity in ultra-thin markets, NOT a mapping/window bug. Aligned-price abs-diff ~0.001bps (same instrument). 6 corrupt L4 hourly files (2026-05-27 15:00) excluded.
 - **Falsification pre-registration morning-override points:** CI method = cluster bootstrap; max_quote_age_s=60; min_clusters=5. All tunable → T4 re-runs if operator wants different thresholds.
+
+## T6 forced-flow result + handoff (for T7/T8)
+- **G2 = ABSENT.** HLSYSTEMEVENTS records no liquidation/ADL/forced-close action across all 1,070,342 rows (498 files, 2026-06-17→07-08). 14 event_types map exactly to the JSON ActionType/type set. → pre-registered **proxy-tagged** heuristic used; every output labeled `proxy-tagged`, NOT ground-truth liquidations.
+- **Proxy events tagged:** SKHX **1,367** / SMSN **1,206** (wallet-enabled scan 2026-05-27 16:00→2026-07-08 09:01). Table: `data/reports/forced_flow_events_proxy.parquet` (git-ignored). T7 consumes this to pick book-pull windows.
+- **T8 REPORT CAVEATS (must state):** (1) proxy ≠ real liquidations — heuristic, no venue liquidation feed exists; (2) **median==0 / sigma==0 abstention** — thin-market candidate buckets with an undefined 3×-of-zero baseline are NOT tagged and are COUNTED in `build_proxy_event_table` → `suppressed_candidates {total, zero_baseline_rate, zero_return_sigma}`; report these counts as a detection-sensitivity floor. (3) **fixed UTC-minute buckets** approximate the pre-registered 60s sliding window → sub-minute bursts straddling a minute boundary can be split/under-detected (merge only joins already-qualified buckets).
+- **T6-1 (LOW, deferred — forced_flow.py ~102-111):** corrupt-gzip / missing-`user_taker` skips match on exception SUBSTRING text (`'corrupt deflate stream'`, `'user_taker'`); brittle to polars rewording and over-broad when multiple columns missing. Harden to structured error/column-set matching if revisited.
+- Data notes: two corrupt 2026-05-27 15:00 gzip files skipped; 774 older files lacked `user_taker` (pre-attribution era) → excluded from wallet-repetition scan.
 
 ## Deferred review findings (tracked, not yet actioned)
 - **T4-2 (LOW, loaders.py:143):** Float64 schema_override coerces unparseable float cells to silent null instead of raising (raise→silent-null). Immaterial for known-numeric CoinAPI cols (26/26 green, primary cell reproduces), but a latent data-integrity masking risk. Harden to raise on non-numeric if revisited.
