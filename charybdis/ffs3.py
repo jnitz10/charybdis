@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import fcntl
 import json
 import os
 import sys
+import threading
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -17,6 +20,7 @@ from typing import Any, Protocol, TextIO
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import BotoCoreError, ClientError
 
 
 GB = 1_000_000_000
@@ -24,6 +28,7 @@ ENDPOINT_URL = "https://s3.flatfiles.coinapi.io/"
 BUCKET = "coinapi"
 REGION = "us-east-1"
 PAUSE_USD = 178.0
+MAX_REQUESTS_PER_MINUTE = 640
 
 # Each limit is the cumulative byte boundary for that tier. CoinAPI's published
 # "GB" prices are treated as decimal gigabytes.
@@ -102,6 +107,8 @@ class FlatFilesS3Client:
     """Minimal path-style S3 client for CoinAPI flat files."""
 
     def __init__(self, api_key: str | None = None, *, s3_client: Any | None = None) -> None:
+        self._rate_lock = threading.Lock()
+        self._next_request_at = 0.0
         if s3_client is not None:
             self._s3 = s3_client
             return
@@ -126,7 +133,7 @@ class FlatFilesS3Client:
             request: dict[str, Any] = {"Bucket": BUCKET, "Prefix": prefix}
             if marker is not None:
                 request["Marker"] = marker
-            response = self._s3.list_objects(**request)
+            response = self._request_with_backoff("list_objects", **request)
             page = [
                 ObjectInfo(key=item["Key"], size=int(item["Size"]))
                 for item in response.get("Contents", [])
@@ -146,16 +153,57 @@ class FlatFilesS3Client:
 
         destination.parent.mkdir(parents=True, exist_ok=True)
         temporary = destination.with_suffix(destination.suffix + ".part")
-        response = self._s3.get_object(Bucket=BUCKET, Key=key)
-        try:
-            with temporary.open("wb") as output:
-                for chunk in response["Body"].iter_chunks(chunk_size=1024 * 1024):
-                    if chunk:
-                        output.write(chunk)
-            temporary.replace(destination)
-        except BaseException:
+        for attempt in range(7):
             temporary.unlink(missing_ok=True)
-            raise
+            try:
+                response = self._request_with_backoff(
+                    "get_object", Bucket=BUCKET, Key=key
+                )
+                with temporary.open("wb") as output:
+                    for chunk in response["Body"].iter_chunks(chunk_size=1024 * 1024):
+                        if chunk:
+                            output.write(chunk)
+                temporary.replace(destination)
+                return
+            except (BotoCoreError, OSError, ClientError):
+                temporary.unlink(missing_ok=True)
+                if attempt == 6:
+                    raise
+                time.sleep(min(16.0, 0.5 * (2**attempt)))
+
+    def _request_with_backoff(self, method_name: str, **kwargs: Any) -> Any:
+        """Rate-limit requests and explicitly back off CoinAPI 403/429 replies."""
+
+        method = getattr(self._s3, method_name)
+        for attempt in range(7):
+            self._wait_for_request_slot()
+            try:
+                return method(**kwargs)
+            except ClientError as error:
+                metadata = error.response.get("ResponseMetadata", {})
+                status = int(metadata.get("HTTPStatusCode", 0) or 0)
+                code = str(error.response.get("Error", {}).get("Code", ""))
+                if status not in {403, 429} and code not in {
+                    "403",
+                    "429",
+                    "SlowDown",
+                    "Throttling",
+                    "TooManyRequestsException",
+                }:
+                    raise
+                if attempt == 6:
+                    raise
+                time.sleep(min(16.0, 0.5 * (2**attempt)))
+        raise AssertionError("unreachable retry loop")
+
+    def _wait_for_request_slot(self) -> None:
+        interval = 60.0 / MAX_REQUESTS_PER_MINUTE
+        with self._rate_lock:
+            now = time.monotonic()
+            delay = max(0.0, self._next_request_at - now)
+            self._next_request_at = max(now, self._next_request_at) + interval
+        if delay:
+            time.sleep(delay)
 
 
 def tier_cost_usd(sku: str, byte_count: int) -> Decimal:
@@ -357,6 +405,7 @@ def execute_manifest(
     *,
     data_root: str | Path = "data",
     dry_run: bool = False,
+    workers: int = 1,
     output: TextIO = sys.stdout,
 ) -> ExecutionResult:
     """Print a plan, enforce G3, and optionally download its gzipped files."""
@@ -387,15 +436,21 @@ def execute_manifest(
         print("DRY-RUN complete; no downloads", file=output)
         return ExecutionResult(downloaded=0, skipped=0, paused=False)
 
+    if not isinstance(workers, int) or isinstance(workers, bool) or not 1 <= workers <= 8:
+        raise ValueError("workers must be an integer from 1 through 8")
     root = Path(data_root)
     downloaded = 0
     skipped = 0
+    pending: list[tuple[ManifestFile, Path]] = []
     for item in manifest.files:
         destination = _destination_for(root, item.key)
         if destination.exists() and destination.stat().st_size == item.size:
             print(f"SKIP existing {item.key}", file=output)
             skipped += 1
             continue
+        pending.append((item, destination))
+
+    def download_one(item: ManifestFile, destination: Path) -> int:
         client.download_file(item.key, destination)
         actual_size = destination.stat().st_size
         if actual_size != item.size:
@@ -404,8 +459,24 @@ def execute_manifest(
                 f"size mismatch for {item.key}: expected {item.size}, got {actual_size}"
             )
         meter.record(item.sku, manifest.billing_day, actual_size)
-        downloaded += 1
-        print(f"DOWNLOADED {item.key}", file=output)
+        return actual_size
+
+    if workers == 1:
+        for item, destination in pending:
+            download_one(item, destination)
+            downloaded += 1
+            print(f"DOWNLOADED {item.key}", file=output)
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = {
+                executor.submit(download_one, item, destination): item
+                for item, destination in pending
+            }
+            for future in as_completed(futures):
+                item = futures[future]
+                future.result()
+                downloaded += 1
+                print(f"DOWNLOADED {item.key}", file=output)
     return ExecutionResult(downloaded=downloaded, skipped=skipped, paused=False)
 
 
