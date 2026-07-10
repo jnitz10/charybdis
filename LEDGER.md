@@ -13,9 +13,9 @@
 | task | implementer | status | commit SHA | check | verdict | follow-ups | decision? |
 |---|---|---|---|---|---|---|---|
 | T0 scaffold + ffs3 client + spend meter | codex GPT5.6-High | DONE | cbda9c4 | pytest 5/5 GREEN | LOW (A1/A2/A4 fixed; L1/L2 hygiene) | A3(GiB→G1) A5(unknown-SKU price→pre-T5) A6 A7 L1 L2 | none |
-| T1 study-1 pull | codex GPT5.6-High | DONE (full) | 45ca33f + resume | 16,763/16,763; 0 missing; idempotence ok; $70.66 | complete | none (L4 trades 6,791/6,791) | G1 ~settled |
+| T1 study-1 pull | codex GPT5.6-High | DONE (full) | 45ca33f,dcebcf5 | 16,763/16,763; 0 missing; idempotence ok; $70.66 | complete | none (L4 trades 6,791/6,791) | G1 ~settled |
 | T2 loaders + book + calendars | codex GPT5.6-High | DONE | e5100b5 | 9/9 GREEN; F1/F2/F3 fixed; checkpoints byte-verified | LOW (A1 one-sided-L1 → T3 note) | F4(date-stamp keyed on dataset name) | none |
-| T3 markout engine | codex GPT5.6-High | fixing (correctness CLEAN; adversarial MED) | — | 5/5 GREEN; fixture arithmetic byte-verified CLEAN | MED→fixing ADV-1/ADV-2 + test gaps | ADV-3 same-ts trade drop; fee 1.5bps assumed; funding=T4 input | none |
+| T3 markout engine | codex GPT5.6-High | DONE | (pending) | 9/9 GREEN; correctness CLEAN + adversarial re-review CLEAN | CLEAN (ADV-1/ADV-2 fixed) | ADV-3 same-ts drop; fee 1.5bps assumed; funding=T4 input | none |
 | T4 run + study-1 report | codex GPT5.6-High | queued | — | — | — | — | none |
 | T5 study-2 cheap data (≤$45) | codex GPT5.6-High | queued | — | — | — | oracle GOLD wart demo | after G1 |
 | T6 liquidation tagging | codex GPT5.6-High | queued | — | — | — | — | G2 |
