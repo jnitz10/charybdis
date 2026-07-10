@@ -5,6 +5,7 @@
 **Budget state (2026-07-10):** meter cumulative **$70.66** (T1 pull COMPLETE, matches dry-run exactly). Balance ~$121 after resume. $180 policy cap / $178 G3 pause → ~$107 meter headroom. Remaining: Study 2 (T5 cheap + T7 ≤$40) ⇒ meter lands ~$110. Operator recharged CoinAPI balance to **$127.27** (auto-recharge is NOT firing despite being enabled — flag to CoinAPI support). $180 policy ceiling / $178 G3 pause unchanged → ~$113 meter headroom. Remaining planned spend: T1-resume ~$6.24 + Study 2 (T5 cheap + T7 ≤$40) ⇒ meter lands ~$110, under balance and cap.
 
 **CoinAPI limits (operator-confirmed 2026-07-10 AM):** **Tier 3 → concurrency 8, 640 RPM** (~10.6 req/s) after top-up (was 4/160 overnight). Use 8/640 with 429 backoff in T7 + all future pulls.
+**Disk (operator-confirmed 2026-07-10):** NO 25 GB disk ceiling — hundreds of GB free. Plan §1.5's ≤25 GB budget is VOID; the ONLY spend/size guardrail is the $180 meter cap. Do not down-scope pulls or windows for disk. Keep files gzipped for speed, not space.
 
 **Operating mode (operator directive 2026-07-10):** RUN AUTONOMOUSLY TO THE CAP. Do NOT pause for per-purchase approval. Hard guardrail = $180 ceiling / $178 G3 pre-download pause (client-enforced). G1 downgraded from blocking pause → non-blocking checkpoint (log spend + flag GB-vs-GiB for morning). Only surface to operator for a true blocker, plan-stale (G4), or hitting the cap.
 
@@ -20,7 +21,7 @@
 | T5 study-2 cheap data (≤$45) | codex GPT5.6-High | DONE | b9b4e63 | 6/6 GREEN; spend reconciles $15.82; funding 0 gaps | LOW (A5 clean; T5-A1/A2) | T5-A1 assumed-price runtime marker; T5-A2 GOLD contemporaneous marks; verify HL feed pricing vs billing | A5 resolved; G2→T6 |
 | T6 liquidation tagging | codex GPT5.6-High | DONE | 59cb384 | 7/7 GREEN; adv-review FIX-FIRST resolved (5 items) | HIGH(tautological look-ahead test)→FIXED; 3×MED→FIXED; T6-1 LOW deferred | G2=ABSENT→proxy-tagged |
 | — G2 finding | — | — | — | HLSYSTEMEVENTS: 0 liquidation/ADL/forced-close across 1,070,342 rows (498 files) | 14 event_types = JSON action types exactly | proxy fallback (pre-registered) |
-| T7 event-window book pulls (≤$40) + anatomy | codex GPT5.6-High | NEXT | — | — | — | +ce-correctness-reviewer (money math); use 8/640 tier | none |
+| T7 event-window book pulls (≤$40) + anatomy | codex GPT5.6-High | DONE | 411655e | 47 tests GREEN; dual review (adv+corr) → 2 HIGH + 4 MED FIXED, re-run | pull $30.44 (0 drops); trigger-depth & pairing bugs fixed & re-run | book-depth predicate; pair-intersection |
 | T8 study-2 report + close-out | codex GPT5.6-High | queued | — | — | — | — | none |
 
 ## Escalations / decisions log
@@ -35,6 +36,16 @@
   - **Almost all NEGATIVE ~−2 to −3 bps** → passive making these index perps loses net of fees in-sample. Off-hours/weekend **not robustly better than RTH**: liquid markets (SP500, cash:USA500, XYZ100) show near-identical segments (SP500 weekend −1.86 marginally > RTH −2.00, CIs just separate but tiny magnitude); thin flx markets (USA500, USA100) are too noisy (wide CIs, low G, some CIs cross 0). Leans AGAINST prior #1, but that is the operator's call — report states numbers only (no verdict), correct per §1.7.
 - **Era-overlap cross-val (REAL divergence, reviewer-confirmed by raw recount):** L2/L4 trade-count agreement 85–93% for liquid markets, but **22–25% for flx:USA500 / flx:USA100** — genuine L4 (wallet-attributed) feed sparsity in ultra-thin markets, NOT a mapping/window bug. Aligned-price abs-diff ~0.001bps (same instrument). 6 corrupt L4 hourly files (2026-05-27 15:00) excluded.
 - **Falsification pre-registration morning-override points:** CI method = cluster bootstrap; max_quote_age_s=60; min_clusters=5. All tunable → T4 re-runs if operator wants different thresholds.
+
+## Study 2 RESULT (T7 — dual-reviewed, re-run after fixes; numbers only, no verdict)
+- **Primary decision number — matched-pair 30s net passive-maker markout (bps, proxy-tagged, 159 pairs/side, cluster-bootstrap 95% CI):**
+  - Pooled ALL: **forced-flow −1.56 [−2.01, −1.13] n=134k G=120** vs **baseline −1.79 [−3.11, −0.85] n=54k G=132** → CIs overlap, **no robust FF-vs-baseline difference**.
+  - SKHX: FF −1.48 [−2.05, −0.95] vs baseline −1.60 [−2.39, −0.99]. SMSN: FF −1.77 [−2.43, −1.15] vs baseline −2.60 [−8.02, +1.19] (baseline CI huge → uninformative).
+  - Markout engine identical to Study 1 (fee 1.5bps, max_quote_age 60s, 2000 resamples, min_clusters 5, funding-netted).
+- **CRITICAL CAVEAT for T8 (must foreground) — differential quote-feed attenuation.** Usable quote era is **2026-05-08 → 06-18 only** (post-~June-18 CoinAPI `ask_px` frozen = confirmed feed artifact, not our bug; verified vs contemporaneous trades). 39.5% of windows dropped. Forced-flow windows lose **57.8%** of quote rows to crossing vs baseline **27.3%** (**+30.4pp**). So FF markout is measured on the *calmer surviving 42%* of forced-flow moments → biases FF toward looking less adverse than true forced flow. "No difference" is therefore a WEAK/conservative read, not a clean null.
+- **Cascade anatomy** (1,312 of 2,573 events computed; rest post-June-18 "coverage absent"): reversion mean half-life **116.8s** (auditable non-null mean; **96 censored** never-retrace + **13 zero-overshoot** events excluded as null, counted not dropped). Depth-consumed now correct after excluding trigger/stop orders from the book (were corrupting every event).
+- Proxy events, not real liquidations (no venue liq feed — see G2). Post-June-18 book stays crossed even after trigger fix (never-deleted phantom limits) → depth untrustworthy there regardless; Study 2 is inherently a **pre-degradation-era** result.
+- **T7 deferred follow-ups (LOW):** PENDING/REJECTED L4 depth semantics vs a real cancel (verify); post-June-18 depth untrustworthy (disclosed); non-atomic part-file write; event_id ordinal desync on duplicate keys.
 
 ## T6 forced-flow result + handoff (for T7/T8)
 - **G2 = ABSENT.** HLSYSTEMEVENTS records no liquidation/ADL/forced-close action across all 1,070,342 rows (498 files, 2026-06-17→07-08). 14 event_types map exactly to the JSON ActionType/type set. → pre-registered **proxy-tagged** heuristic used; every output labeled `proxy-tagged`, NOT ground-truth liquidations.
