@@ -30,6 +30,8 @@ _FLOAT_COLUMNS = {
     "entry_sx",
     "orig_size",
     "trigger_px",
+    "mark_px",
+    "oracle_px",
 }
 _BOOLEAN_COLUMNS = {
     "is_buy",
@@ -121,6 +123,24 @@ def scan_book_events(
     )
 
 
+def scan_oracle_prices(
+    source: str | Path,
+    *,
+    key: str | Path | None = None,
+    era: Era | None = "l4",
+    columns: Sequence[str] | None = None,
+) -> pl.LazyFrame:
+    """Lazily scan the L4 Hyperliquid oracle feed with column projection."""
+
+    return _scan_dataset(
+        source,
+        "HLORACLEPRICES",
+        key=key,
+        era=era,
+        columns=columns,
+    )
+
+
 def _scan_dataset(
     source: str | Path,
     dataset: str,
@@ -131,6 +151,10 @@ def _scan_dataset(
 ) -> pl.LazyFrame:
     metadata = _metadata_for(source, key)
     resolved_era = _resolve_era(metadata, era)
+    if dataset == "LIMITBOOK_FULL" and resolved_era == "l2" and metadata is None:
+        raise ValueError(
+            "a book path/key with D-YYYYMMDD is required to date timestamps"
+        )
     if metadata is not None and metadata.dataset != dataset:
         raise ValueError(
             f"expected T-{dataset}, got T-{metadata.dataset} in supplied key"
@@ -156,11 +180,7 @@ def _scan_dataset(
     for name in selected:
         if name in ("time_exchange", "time_coinapi"):
             value = pl.col(name).cast(pl.String)
-            if dataset == "LIMITBOOK_FULL" and resolved_era == "l2":
-                if metadata is None:
-                    raise ValueError(
-                        "an L2 book path/key with D-YYYYMMDD is required to date timestamps"
-                    )
+            if dataset == "LIMITBOOK_FULL" and metadata is not None:
                 prefix = metadata.partition_date.isoformat() + "T"
                 value = pl.lit(prefix) + value
             expressions.append(

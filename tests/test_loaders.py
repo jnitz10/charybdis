@@ -2,6 +2,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 from charybdis.loaders import (
     parse_flat_file_key,
@@ -90,3 +91,19 @@ def test_era_can_be_explicit_when_path_is_not_a_flat_file_key(tmp_path: Path) ->
 
     assert quotes.height == 5
     assert quotes[0, "ask_px"] == 278.74
+
+
+def test_book_loader_requires_dated_flat_file_key(tmp_path: Path) -> None:
+    source = FIXTURES / BOOK_KEY
+    local = tmp_path / "book.csv.gz"
+    local.write_bytes(source.read_bytes())
+
+    with pytest.raises(
+        ValueError,
+        match="book path/key with D-YYYYMMDD is required to date timestamps",
+    ):
+        scan_book_events(
+            local,
+            era="l2",
+            columns=("time_exchange", "update_type", "entry_px"),
+        ).collect()
