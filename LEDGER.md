@@ -10,7 +10,8 @@
 
 | task | implementer | status | commit SHA | check | verdict | follow-ups | decision? |
 |---|---|---|---|---|---|---|---|
-| T0 REST harvester + doc-check (formula citation, fee table) | codex GPT5.6-High | queued | — | — | — | — | none |
+| T0 REST harvester + doc-check (formula citation, fee table) | codex GPT5.6-High | DONE | 69e75a6 | 10 tests GREEN; adv-review FIX-FIRST → HIGH cache-poison + MED numpy-int + LOW candle-drop FIXED | formula VERIFIED vs gitbook; HIP-3 clamp assumed→T4; fee table @ data/reports/study3_fee_table.parquet | none |
+| — T0 smoke/estimate | — | — | — | SKHX 3,381 funding rows, candles to 2026-02-19; G-F3 T1≈2,611 calls ~22min@2rps | live metadata shows **225** universe entries vs plan's ~289 → T1 reconciles | candleSnapshot endTime EXCLUSIVE |
 | T1 harvest all dexes: funding + candles + snapshots | codex GPT5.6-High | queued | — | — | — | — | none |
 | T2 S-A census + persistence + capacity map | codex GPT5.6-High | queued | — | — | — | — | none |
 | T3 S-C carry backtests + decomposition | codex GPT5.6-High | queued | — | — | — | — | none |
