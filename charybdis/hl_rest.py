@@ -58,6 +58,8 @@ class HyperliquidInfo:
         self._request_interval = 1.0 / requests_per_second
         self._next_request_at = 0.0
         self._rate_lock = Lock()
+        self.rest_calls = 0
+        self.cache_hits = 0
 
     def close(self) -> None:
         if self._owns_client:
@@ -83,12 +85,14 @@ class HyperliquidInfo:
         ).encode()
         cache_path = self.cache_dir / f"{hashlib.sha256(canonical_body).hexdigest()}.json"
         if cache_path.exists() and not refresh:
+            self.cache_hits += 1
             cached = json.loads(cache_path.read_text())
             return cached["payload"]
 
         backoff = 2.0
         for attempt in range(8):
             self._wait_for_request_slot()
+            self.rest_calls += 1
             response = self.client.post(INFO_URL, json=body)
             if response.status_code not in {403, 429}:
                 response.raise_for_status()
@@ -145,13 +149,14 @@ class HyperliquidInfo:
         return [str(record["name"]) for record in payload if record]
 
     def meta_and_asset_ctxs(
-        self, dex: str, *, refresh: bool = False
+        self, dex: str | None = None, *, refresh: bool = False
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-        """Return a metadata/context snapshot for one HIP-3 DEX."""
+        """Return a metadata/context snapshot for the main or one HIP-3 DEX."""
 
-        payload = self._post(
-            {"type": "metaAndAssetCtxs", "dex": dex}, refresh=refresh
-        )
+        body = {"type": "metaAndAssetCtxs"}
+        if dex is not None:
+            body["dex"] = dex
+        payload = self._post(body, refresh=refresh)
         if not isinstance(payload, list) or len(payload) != 2:
             raise RuntimeError(f"unexpected metaAndAssetCtxs payload for {dex}: {payload!r}")
         metadata, contexts = payload
@@ -340,9 +345,9 @@ def perp_dexs(*, refresh: bool = False) -> list[str]:
 
 
 def meta_and_asset_ctxs(
-    dex: str, *, refresh: bool = False
+    dex: str | None = None, *, refresh: bool = False
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """Fetch one DEX metadata/context snapshot using the shared disk cache."""
+    """Fetch a main- or HIP-3-DEX snapshot using the shared disk cache."""
 
     return _default_api().meta_and_asset_ctxs(dex, refresh=refresh)
 
