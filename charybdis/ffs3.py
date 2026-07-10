@@ -27,23 +27,32 @@ PAUSE_USD = 178.0
 
 # Each limit is the cumulative byte boundary for that tier. CoinAPI's published
 # "GB" prices are treated as decimal gigabytes.
+TRADES_PRICE_TIERS = (
+    (GB // 2, Decimal("24")),
+    (5 * GB, Decimal("12")),
+    (None, Decimal("6")),
+)
 PRICE_TIERS: dict[str, tuple[tuple[int | None, Decimal], ...]] = {
     "Order Book": (
         (1 * GB, Decimal("8")),
         (10 * GB, Decimal("4")),
         (None, Decimal("2")),
     ),
-    "Trades": (
-        (GB // 2, Decimal("24")),
-        (5 * GB, Decimal("12")),
-        (None, Decimal("6")),
-    ),
+    "Trades": TRADES_PRICE_TIERS,
     "Quotes": (
         (GB // 2, Decimal("8")),
         (5 * GB, Decimal("4")),
         (None, Decimal("2")),
     ),
+    # CoinAPI does not publish separate rates for these Hyperliquid feeds.
+    # Treat each as its own meter SKU while conservatively applying Trades rates.
+    "HL Oracle Prices": TRADES_PRICE_TIERS,
+    "HL System Events": TRADES_PRICE_TIERS,
+    "HL TWAP Statuses": TRADES_PRICE_TIERS,
 }
+ASSUMED_PRICE_SKUS = frozenset(
+    {"HL Oracle Prices", "HL System Events", "HL TWAP Statuses"}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -274,6 +283,9 @@ def sku_from_key(key: str) -> str:
         "T-LIMITBOOK_FULL": "Order Book",
         "T-TRADES": "Trades",
         "T-QUOTES": "Quotes",
+        "T-HLORACLEPRICES": "HL Oracle Prices",
+        "T-HLSYSTEMEVENTS": "HL System Events",
+        "T-HLTWAPSTATUSES": "HL TWAP Statuses",
     }
     try:
         return mapping[dataset]

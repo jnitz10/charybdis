@@ -1,6 +1,7 @@
 from io import StringIO
 from pathlib import Path
 
+from charybdis import ffs3
 from charybdis.ffs3 import (
     FlatFilesS3Client,
     GB,
@@ -9,6 +10,21 @@ from charybdis.ffs3 import (
     build_manifest,
     execute_manifest,
 )
+
+
+def test_hyperliquid_feed_skus_use_assumed_trades_pricing() -> None:
+    datasets = (
+        "T-HLORACLEPRICES",
+        "T-HLSYSTEMEVENTS",
+        "T-HLTWAPSTATUSES",
+    )
+
+    for dataset in datasets:
+        sku = ffs3.sku_from_key(f"{dataset}/D-2026071000/E-HYPERLIQUIDL4.csv.gz")
+        assert sku in ffs3.ASSUMED_PRICE_SKUS
+        assert ffs3.tier_cost_usd(sku, 1 * GB) == ffs3.tier_cost_usd(
+            "Trades", 1 * GB
+        )
 
 
 def test_spend_meter_order_book_tiers_reset_per_day(tmp_path: Path) -> None:

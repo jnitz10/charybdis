@@ -4,7 +4,7 @@
 **Protocol:** agentic-loop. Orchestrator (Opus) never reads source / writes code. Implementer: GPT5.6-High via `codex:codex-rescue`. Reviewer: `ce-adversarial-reviewer` every task; + `ce-correctness-reviewer` on T3, T7.
 **Budget state (2026-07-10):** meter cumulative **$70.66** (T1 pull COMPLETE, matches dry-run exactly). Balance ~$121 after resume. $180 policy cap / $178 G3 pause → ~$107 meter headroom. Remaining: Study 2 (T5 cheap + T7 ≤$40) ⇒ meter lands ~$110. Operator recharged CoinAPI balance to **$127.27** (auto-recharge is NOT firing despite being enabled — flag to CoinAPI support). $180 policy ceiling / $178 G3 pause unchanged → ~$113 meter headroom. Remaining planned spend: T1-resume ~$6.24 + Study 2 (T5 cheap + T7 ≤$40) ⇒ meter lands ~$110, under balance and cap.
 
-**CoinAPI limits (operator-confirmed):** max concurrency **4**, **160 RPM** (~2.6 req/s), backoff on 429. Put these in every T5/T7 pull brief.
+**CoinAPI limits (operator-confirmed 2026-07-10 AM):** **Tier 3 → concurrency 8, 640 RPM** (~10.6 req/s) after top-up (was 4/160 overnight). Use 8/640 with 429 backoff in T7 + all future pulls.
 
 **Operating mode (operator directive 2026-07-10):** RUN AUTONOMOUSLY TO THE CAP. Do NOT pause for per-purchase approval. Hard guardrail = $180 ceiling / $178 G3 pre-download pause (client-enforced). G1 downgraded from blocking pause → non-blocking checkpoint (log spend + flag GB-vs-GiB for morning). Only surface to operator for a true blocker, plan-stale (G4), or hitting the cap.
 
@@ -16,8 +16,8 @@
 | T1 study-1 pull | codex GPT5.6-High | DONE (full) | 45ca33f,dcebcf5 | 16,763/16,763; 0 missing; idempotence ok; $70.66 | complete | none (L4 trades 6,791/6,791) | G1 ~settled |
 | T2 loaders + book + calendars | codex GPT5.6-High | DONE | e5100b5 | 9/9 GREEN; F1/F2/F3 fixed; checkpoints byte-verified | LOW (A1 one-sided-L1 → T3 note) | F4(date-stamp keyed on dataset name) | none |
 | T3 markout engine | codex GPT5.6-High | DONE | 8d424a4 | 9/9 GREEN; correctness CLEAN + adversarial re-review CLEAN | CLEAN (ADV-1/ADV-2 fixed) | ADV-3 same-ts drop; fee 1.5bps assumed; funding=T4 input | none |
-| T4 run + study-1 report | codex GPT5.6-High | DONE | (pending) | 2.20M fills; report↔parquet CLEAN (4 cells recomputed); no verdicts; runner recovered+params doc'd | MED T4-1 fixed (runner in VCS); T4-2/T4-3 LOW | L4 quotes-as-L1 skipped; 6 corrupt L4 files 2026-05-27; smoke-test hung (runner self-verified: valid CLI+engine calls; reviewer verified parquet) | none |
-| T5 study-2 cheap data (≤$45) | codex GPT5.6-High | queued | — | — | — | oracle GOLD wart demo | after G1 |
+| T4 run + study-1 report | codex GPT5.6-High | DONE | 2f23378 | 2.20M fills; report↔parquet CLEAN (4 cells recomputed); no verdicts; runner recovered+params doc'd | MED T4-1 fixed (runner in VCS); T4-2/T4-3 LOW | L4 quotes-as-L1 skipped; 6 corrupt L4 files 2026-05-27; smoke-test hung (runner self-verified: valid CLI+engine calls; reviewer verified parquet) | none |
+| T5 study-2 cheap data (≤$45) | codex GPT5.6-High | DONE | (pending) | 6/6 GREEN; spend reconciles $15.82; funding 0 gaps | LOW (A5 clean; T5-A1/A2) | T5-A1 assumed-price runtime marker; T5-A2 GOLD contemporaneous marks; verify HL feed pricing vs billing | A5 resolved; G2→T6 |
 | T6 liquidation tagging | codex GPT5.6-High | queued | — | — | — | — | G2 |
 | T7 event-window book pulls (≤$40) + anatomy | codex GPT5.6-High | queued | — | — | — | — | none |
 | T8 study-2 report + close-out | codex GPT5.6-High | queued | — | — | — | — | none |
