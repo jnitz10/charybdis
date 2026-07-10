@@ -140,6 +140,7 @@ def _scan_dataset(
         source,
         separator=";",
         null_values="",
+        schema_overrides={name: pl.Float64 for name in _FLOAT_COLUMNS},
         infer_schema_length=1000,
         low_memory=True,
         rechunk=False,
