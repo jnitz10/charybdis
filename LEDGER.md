@@ -9,7 +9,7 @@
 
 **Operating mode (operator directive 2026-07-10):** RUN AUTONOMOUSLY TO THE CAP. Do NOT pause for per-purchase approval. Hard guardrail = $180 ceiling / $178 G3 pre-download pause (client-enforced). G1 downgraded from blocking pause → non-blocking checkpoint (log spend + flag GB-vs-GiB for morning). Only surface to operator for a true blocker, plan-stale (G4), or hitting the cap.
 
-**Queue + next:** T0✓ → T1(pull authorized, executing) → [G1 non-blocking] → T2 → T3 → T4 ‖ T5 → T6(G2 auto-switch) → T7 → T8
+**Queue + next:** T0✓ → T1✓ → [G1 non-blocking] → T2✓ → T3✓ → T4✓ ‖ T5✓ → T6✓(G2 auto-switch) → T7✓ → T8✓ — **RUN COMPLETE (both studies delivered).**
 
 | task | implementer | status | commit SHA | check | verdict | follow-ups | decision? |
 |---|---|---|---|---|---|---|---|
@@ -21,7 +21,8 @@
 | T5 study-2 cheap data (≤$45) | codex GPT5.6-High | DONE | b9b4e63 | 6/6 GREEN; spend reconciles $15.82; funding 0 gaps | LOW (A5 clean; T5-A1/A2) | T5-A1 assumed-price runtime marker; T5-A2 GOLD contemporaneous marks; verify HL feed pricing vs billing | A5 resolved; G2→T6 |
 | T6 liquidation tagging | codex GPT5.6-High | DONE | 59cb384 | 7/7 GREEN; adv-review FIX-FIRST resolved (5 items) | HIGH(tautological look-ahead test)→FIXED; 3×MED→FIXED; T6-1 LOW deferred | G2=ABSENT→proxy-tagged |
 | — G2 finding | — | — | — | HLSYSTEMEVENTS: 0 liquidation/ADL/forced-close across 1,070,342 rows (498 files) | 14 event_types = JSON action types exactly | proxy fallback (pre-registered) |
-| T7 event-window book pulls (≤$40) + anatomy | codex GPT5.6-High | DONE | 411655e | 47 tests GREEN; dual review (adv+corr) → 2 HIGH + 4 MED FIXED, re-run | pull $30.44 (0 drops); trigger-depth & pairing bugs fixed & re-run | book-depth predicate; pair-intersection |
+| T7 event-window book pulls (≤$40) + anatomy | codex GPT5.6-High | DONE | 411655e (+329eaca ffs3 infra) | 47 tests GREEN; dual review (adv+corr) → 2 HIGH + 4 MED FIXED, re-run | pull $30.44 (0 drops); trigger-depth & pairing bugs fixed & re-run | book-depth predicate; pair-intersection |
+| T8 reports + combined summary + spend + close-out | codex GPT5.6-High | DONE | 6c290c3 | adv-document review SHIP; every number traces to parquet/json cell; no verdicts; caveat foregrounded | 2 LOW (suppressed-candidate count "not computed"; G2 census sourced from LEDGER) | none |
 | T8 study-2 report + close-out | codex GPT5.6-High | queued | — | — | — | — | none |
 
 ## Escalations / decisions log
@@ -79,5 +80,20 @@
 - **Quotes header (verified on disk, differs from plan §2.3):** real L2-era Quotes = `id_site_coinapi;time_exchange;time_coinapi;ask_px;ask_sx;bid_px;bid_sx` (leading id col; `ask_px/ask_sx/bid_px/bid_sx` not `ask_price/ask_size`; `time_exchange` is full ISO). T2 loaders parse by actual header. Resolved by orchestrator (plan §2.3 itself says "inspect first row"); no operator needed. Confirm L4-era quotes header when those files land.
 - T2 SEAM-CARD held by orchestrator: ffs3.py has NO csv/gzip/polars code → T2 builds loaders fresh; reuse only `sku_from_key:269`, `_destination_for:334`, dataclasses `ObjectInfo/ManifestFile/Manifest`. New modules: `charybdis/loaders.py`, `charybdis/book.py`, `charybdis/calendars.py`.
 
+## RUN CLOSE-OUT (2026-07-10) — both studies COMPLETE
+**Final spend: $116.92 / $180 cap** (T1 $70.66 + T5 $15.82 + T7 $30.44). Receipts: `docs/reports/spend_accounting_2026-07-09.md`. No G3 pause hit; no re-pull after T7. Meter reconciles to `data/spend.json` running_cost_usd.
+**Commits (branch `studies/overnight-2026-07-09`):** cbda9c4, 45ca33f, dcebcf5, e5100b5, 8d424a4, 2f23378, b9b4e63, 046ec93, 59cb384, 0565d15, 411655e, 066b4b7, 329eaca, 6c290c3 (+ ledger). **Branch NOT merged to main / NOT pushed** — awaiting operator (per "commit only when asked").
+**Deliverables:** `docs/reports/study1_offhours_markout_2026-07-09.md`, `study2_forced_flow_2026-07-09.md`, `summary_studies_1_2_2026-07-09.md`, `spend_accounting_2026-07-09.md`. Parquets under `data/reports/` (git-ignored).
+
+**Headline numbers (numbers only — operator draws verdicts):**
+- **Study 1 (prior-#1 kill test):** 30s net passive-maker markout ≈ −2 to −3 bps across ALL segments; off-hours/weekend NOT robustly better than RTH (liquid mkts within tenths of a bp; km:USTECH weekend worse; thin flx uninformative). Leans against prior #1.
+- **Study 2 (forced-flow, proxy-tagged, pre-degradation era 2026-05-08→06-18):** matched-pair 30s markout FF −1.56 [−2.01,−1.13] vs baseline −1.79 [−3.11,−0.85] → CIs overlap, no robust difference — BUT confounded by +30.4pp differential quote-feed attenuation (FF windows 57.8% crossed vs baseline 27.3%), so "no difference" is conservative, not clean.
+
+## Consolidated follow-ups for operator (none blocking)
+- **Data/feed:** `mkts` dex never in flat files (confirm why); oracle feed start 2026-06-17 16:00 (confirm inception); **CoinAPI ask_px frozen post-~2026-06-18** (feed-degradation — report to CoinAPI; limits Study 2 to pre-June-18); CoinAPI **auto-recharge not firing** (manual top-ups needed — escalate to support).
+- **Billing:** reconcile decimal-GB meter + assumed HL-feed SKU pricing vs CoinAPI console (G1/A3).
+- **Methodology overrides (tunable → re-runs):** CI = cluster bootstrap (market×6h, 2000 reps); staleness max_quote_age_s=60; min_clusters=5; fee 1.5bps maker `assumed` (verify vs HL fee docs); proxy heuristic minute-bucket vs 60s window.
+- **Code LOW (deferred):** T6-1 substring-exception matching; suppressed-candidate census not persisted ("not computed" in report); G2 census only in LEDGER; T7 residuals (PENDING/REJECTED L4 depth vs real cancel; post-June-18 depth untrustworthy; non-atomic part-write; event_id ordinal desync); T2 F4; T3 ADV-3; T4-2/T4-3.
+
 ## RESUME state
-(not triggered)
+(not triggered — run completed cleanly)
