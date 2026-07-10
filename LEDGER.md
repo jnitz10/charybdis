@@ -19,7 +19,7 @@
 | — G-F2 decision | — | — | — | pre-registered F-B: observed R²@min50=0.962 ≥ 0.95 → **S-D (T5) FULL scope (prediction framing survives)** | caveat: raw 0.96@min50 partly partial-observation; long-lead predictability moderate not near-perfect | routed |
 | T5 S-D funding-clock brackets (G-F2 routes scope) | codex GPT5.6-High | queued | — | — | — | — | none |
 | T6 S-E cross-dex spreads + twin-basis risk | codex GPT5.6-High | queued | — | — | — | — | none |
-| T7 S-F event-rate normalization + wallet bridge | codex GPT5.6-High | queued | — | — | — | — | none |
+| T7 S-F event-rate normalization + wallet bridge | codex GPT5.6-High | DONE | 04bbea6 | 9 tests GREEN; adv-review FIX-FIRST (circular bridge + pooling artifact) → fixed | **F-F: funding does NOT time forced flow** (per-mkt ratios incl 1; pooled G=2 low_cluster). exposure-normalized rate = T8-gap fix. wallet bridge vs control ~0 (no funding linkage) | market-selection only |
 | T8 consolidated report + spend + close-out | codex GPT5.6-High | queued | — | — | — | — | none |
 
 ## Escalations / decisions log
