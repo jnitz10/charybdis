@@ -141,6 +141,21 @@ def scan_oracle_prices(
     )
 
 
+def scan_report_parquet(
+    source: str | Path,
+    *,
+    columns: Sequence[str],
+) -> pl.LazyFrame:
+    """Lazily scan a report parquet with an explicit column projection."""
+
+    scan = pl.scan_parquet(source)
+    available = scan.collect_schema().names()
+    missing = [name for name in columns if name not in available]
+    if missing:
+        raise ValueError(f"columns absent from parquet schema: {missing}")
+    return scan.select(list(columns))
+
+
 def _scan_dataset(
     source: str | Path,
     dataset: str,
