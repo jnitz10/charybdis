@@ -17,8 +17,8 @@
 | T2 loaders + book + calendars | codex GPT5.6-High | DONE | e5100b5 | 9/9 GREEN; F1/F2/F3 fixed; checkpoints byte-verified | LOW (A1 one-sided-L1 → T3 note) | F4(date-stamp keyed on dataset name) | none |
 | T3 markout engine | codex GPT5.6-High | DONE | 8d424a4 | 9/9 GREEN; correctness CLEAN + adversarial re-review CLEAN | CLEAN (ADV-1/ADV-2 fixed) | ADV-3 same-ts drop; fee 1.5bps assumed; funding=T4 input | none |
 | T4 run + study-1 report | codex GPT5.6-High | DONE | 2f23378 | 2.20M fills; report↔parquet CLEAN (4 cells recomputed); no verdicts; runner recovered+params doc'd | MED T4-1 fixed (runner in VCS); T4-2/T4-3 LOW | L4 quotes-as-L1 skipped; 6 corrupt L4 files 2026-05-27; smoke-test hung (runner self-verified: valid CLI+engine calls; reviewer verified parquet) | none |
-| T5 study-2 cheap data (≤$45) | codex GPT5.6-High | DONE | (pending) | 6/6 GREEN; spend reconciles $15.82; funding 0 gaps | LOW (A5 clean; T5-A1/A2) | T5-A1 assumed-price runtime marker; T5-A2 GOLD contemporaneous marks; verify HL feed pricing vs billing | A5 resolved; G2→T6 |
-| T6 liquidation tagging | codex GPT5.6-High | queued | — | — | — | — | G2 |
+| T5 study-2 cheap data (≤$45) | codex GPT5.6-High | DONE | b9b4e63 | 6/6 GREEN; spend reconciles $15.82; funding 0 gaps | LOW (A5 clean; T5-A1/A2) | T5-A1 assumed-price runtime marker; T5-A2 GOLD contemporaneous marks; verify HL feed pricing vs billing | A5 resolved; G2→T6 |
+| T6 liquidation tagging | codex GPT5.6-High | running | — | — | — | G2 auto-switch; TDD burst/calm | G2 |
 | T7 event-window book pulls (≤$40) + anatomy | codex GPT5.6-High | queued | — | — | — | — | none |
 | T8 study-2 report + close-out | codex GPT5.6-High | queued | — | — | — | — | none |
 
