@@ -1,95 +1,103 @@
-# HANDOFF — Overnight Studies 1 & 2 orchestration (2026-07-10)
+# HANDOFF — Research console: operator feedback fix round (2026-07-10)
 
-You are **Opus, the orchestrator** running the **agentic-loop** skill for the plan
-`docs/superpowers/plans/2026-07-09-overnight-studies-1-2.md`. You never read source or
-write code yourself — you dispatch codex to implement and CE agents to review, hold only
-`LEDGER.md` + small cards, and commit each task on branch `studies/overnight-2026-07-09`.
+The research console v1 (spec `docs/superpowers/specs/2026-07-10-research-console-design.md`)
+merged to main at `952fa8e`. The operator then explored it and gave the feedback below.
+This document is the work order for the fix round. Previous HANDOFF (Studies 1–2
+orchestration) is superseded; see git history if needed.
 
-**On resume: read `LEDGER.md` FIRST (canonical state), then this file (mechanics).**
+## Process directives (operator-mandated, non-negotiable)
 
----
+- **The superpowers plugin is UNINSTALLED.** Do not attempt its skills or workflow
+  (brainstorm/writing-plans/subagent-driven-development are gone).
+- **Load the `dataviz` skill BEFORE writing or editing ANY chart code**, and the
+  `frontend-design:frontend-design` (or `compound-engineering:ce-frontend-design`) skill
+  before frontend/visual work. This applies to code embedded in plans or subagent briefs
+  too. The operator installed these specifically to be used and was rightly annoyed v1
+  shipped without them. (Memory: `feedback-use-design-skills`.)
+- Operator feedback style: blunt. The chart-reset bug got five HATEs. Treat items 1 and 2
+  as the ones they actually care most about.
 
-## Where things stand (2026-07-10 morning)
+## How to run / verify
 
-- **Study 1: COMPLETE & committed.** T0→T4. Commits: `cbda9c4` (T0 client+spend meter),
-  `45ca33f`+`dcebcf5` (T1 pull, 16,763 files/$70.66), `e5100b5` (T2 loaders/book/calendars),
-  `8d424a4` (T3 markout engine), `2f23378` (T4 run+report).
-  - Result (numbers only, no verdict): net 30s passive-maker markout ≈ **−2 to −3 bps** across
-    RTH/off-hrs/weekend; off-hours **not** robustly better than RTH → **leans against prior #1**.
-    Report: `docs/reports/study1_offhours_markout_2026-07-09.md`.
-- **Study 2: in progress.**
-  - **T5 DONE & committed** (`b9b4e63`): cheap-data pull (L4 for 5 markets, oracle SKHX/SMSN/GOLD,
-    full 20.75d HLSYSTEMEVENTS, funding for 225 markets) + A5 spend-meter SKU extension. +$15.82.
-  - **T6 RUNNING** (codex job `task-mrf01sz8-a5e3zw`, monitor `b1myom2qt`): liquidation tagging +
-    the **G2 decision** (does HLSYSTEMEVENTS record liquidation actions? if not → proxy-tagged
-    fallback). TDD task. **Next action: pick up its card, review, commit.**
-  - **T7 queued**: targeted L4 **book** pull for ±30min around each tagged event + matched
-    baselines (dry-run costed first, ≤$40), then cascade anatomy + forced-flow markout.
-    **Gets ce-correctness-reviewer** (money math). Use CoinAPI **concurrency 8 / 640 RPM**.
-  - **T8 queued**: `docs/reports/study2_forced_flow_2026-07-09.md` + combined summary + final
-    spend reconciliation + LEDGER close-out.
+- `uv run charybdis-console` → http://localhost:8787 (serves `console/dist`)
+- After frontend changes: `cd console && npm run build` (dev loop: `npm run dev`, proxies /api)
+- Tests: `uv run pytest -q` (173 passed, 1 skipped at merge)
+- Backend: `charybdis/console/` · Frontend: `console/src/` (pages/, charts/, api.ts, theme.ts, ui.tsx)
+- Per-task review minors carried to "later": `.superpowers/sdd/progress.md` (gitignored scratch,
+  survives until cleaned; the list was triaged acceptable-as-is by the final review)
 
-## Budget
-- Spend meter (`data/spend.json`, flock-guarded): **$86.48**. Ceiling **$180**, G3 pre-download
-  pause at **$178** (client-enforced). Balance ~$105. Remaining work (T7 targeted pull) is small.
-- **Operator directive (durable): run autonomously to the cap — do NOT pause for per-purchase
-  approval.** Only surface for a true blocker, plan-stale (G4), or hitting the cap.
+## Feedback items (fix round scope)
 
----
+### 1. Chart Lab resets zoom/pan on every indicator add/remove — operator HATES this (×5)
+Root cause (already diagnosed): `console/src/charts/CandleChart.tsx` tears down and
+recreates the whole lightweight-charts instance in a `useEffect` keyed on all data props,
+then calls `chart.timeScale().fitContent()`. Adding an indicator → new candles payload →
+full re-init → viewport reset.
+Fix direction: keep the chart instance alive across renders (create once per mount);
+diff series in/out (add/remove indicator series without touching the candle series);
+preserve the visible time range (`timeScale().getVisibleLogicalRange()` → restore after
+data updates); only `fitContent()` on first load or market/source change.
+`TimeSeriesChart.tsx` has the same rebuild pattern (less painful, fix while in there).
 
-## The loop (per task)
-1. **(Optional) RESEARCH** via `Explore` (read-only) → SEAM-CARD, when wiring existing modules.
-2. **IMPLEMENT** via `codex:codex-rescue` (Agent tool, `subagent_type: codex:codex-rescue`).
-   Give it a bounded brief: task card + plan §-pointers, NOT the conversation. TDD tasks
-   (T0/T2/T3/T6/T7) require strict RED→GREEN with **pasted real pytest lines**.
-3. **REVIEW** via `compound-engineering:ce-adversarial-reviewer` (always) reading the working-tree
-   diff fresh; **+ `ce-correctness-reviewer` on T3 and T7** (money math). Scope reviewers to the
-   task's files; tell them to ignore git-ignored `data/`.
-4. **TRIAGE**: fix BLOCKER/HIGH (+ cheap high-value MEDs that gate the next task); record other
-   MED/LOW as ledger follow-ups (don't gold-plate). Max 2 fix passes → escalate.
-5. **COMMIT** (you run git yourself — it doesn't bloat context): conventional-commit message,
-   Co-Authored-By trailer, on branch `studies/overnight-2026-07-09`. Data stays git-ignored.
-6. **LEDGER**: update the task row (status, SHA, verdict, follow-ups) and discard card bodies.
+### 2. Raw CoinAPI data is not browsable — "the whole fucking point" (headline item)
+v1 scoped the console to `data/reports/*.parquet` only (non-recursive, parquet-only glob
+in `charybdis/console/datasets.py`). Invisible today:
+- `data/T-TRADES/`, `data/T-QUOTES/`, `data/T-LIMITBOOK_FULL/` (15G), `data/T-HLORACLEPRICES/`,
+  `data/T-HLSYSTEMEVENTS/` — ~21.5 GB raw CoinAPI flat files, day-partition dirs
+  (`D-2026070621/`) of gzipped CSVs (schema note: `;`-separated, see study pull code
+  `charybdis/loaders.py` + `data/study1_manifest.json` for structure)
+- Subdirs inside `data/reports/` (`study1_l2_parts/`, `study1_l2_stats/`,
+  `study2_markout_parts_proxy/` — hundreds of per-day part files)
+- Loose parquets outside reports/ (e.g. `data/study2_funding.parquet`)
+Fix direction: recursive/partitioned dataset discovery; lazy polars scan of gzip CSVs
+(never load 15 GB); day-partition navigation UI in the Data Browser; ideally Chart Lab
+gains a raw-trades candle source (build OHLCV from T-TRADES server-side) so anything
+pulled can be charted, not just the study3 REST harvest. Existing `charybdis/loaders.py`
+already knows how to read these files — reuse it, don't reinvent.
 
-## How to drive codex (critical mechanics)
-- `codex:codex-rescue` launches a **background codex job** and returns a job id like
-  `task-<id>` + an agentId. It does NOT block.
-- Job state lives at:
-  `/home/jnitz/.claude/plugins/data/codex-openai-codex/state/charybdis-aeb83cd2d6a6ed19/jobs/<task-id>.json`
-  Poll `.status` (`running`→`completed`); the final IMPL-CARD is in `.rendered` (or `.result.rawOutput`).
-  Log: same path with `.log`.
-- **Wait pattern**: arm a `Monitor` that polls the job JSON `.status` every ~25s and echoes on
-  `completed`/`failed`; for long pulls add a heartbeat every ~10 min reading `data/spend.json`
-  `running_cost_usd` + log tail. (Plain background-Bash `until` loops get reaped on long waits;
-  Monitor survives better. Monitors time out at ≤3.6M ms — re-arm if needed by re-checking the
-  job JSON directly.)
-- To continue the SAME codex thread (e.g. recover a script it wrote), `SendMessage` to its agentId.
-- Extract a card:
-  `python3 -c "import json;print(json.load(open('<job>.json'))['rendered'])"`
+### 3. Per-chart explanations — non-intrusive, click-a-`?` popover
+Every chart gets a small `?` icon next to its title; clicking opens a popover with:
+what the chart shows, how to read it (e.g. "whiskers = 95% cluster-bootstrap CIs;
+overlapping intervals = no separation"), what conclusion it feeds, and domain-term
+glossary (proxy events, KRX frozen, dex prefixes, market symbols). Nothing visible
+until clicked. Content sourced from the study reports in `docs/reports/`.
 
-## Config / environment facts
-- **codex network is enabled** for its workspace-write sandbox (`~/.codex/config.toml` →
-  `[sandbox_workspace_write] network_access = true`). Without it codex can't reach CoinAPI.
-- codex's sandbox can't reach the user **systemd** manager → it substitutes `prlimit --as=6GiB`
-  for the plan's `systemd-run MemoryMax=6G`. Functional-equivalent; accepted.
-- **CoinAPI flat-files S3**: endpoint `s3.flatfiles.coinapi.io`, bucket `coinapi`, key =
-  `COINAPI_API_KEY` from `.env`, secret literal `coinapi`, region us-east-1, SigV4.
-  **Rate limits: Tier 3 = concurrency 8, 640 RPM** (raised from 4/160 overnight). Backoff on 429/403.
-- Pricing confirmed **decimal-GB** (meter tracked actual within ~0.7% at the credit lockout).
-- Tooling: `uv` (project env has polars/pyarrow/etc — base python does NOT; use `uv run`),
-  codex-cli 0.144.1. Tests: `uv run pytest -q tests/<file>` (never the full tree casually).
+### 4. Dot-whisker color bug: legend says green, dots are gray
+Study 2 "Forced-flow proxy vs matched baseline" and Study 3 "Funding-clock brackets vs
+baseline" charts. Root cause: in `console/src/charts/options.ts` `dotWhisker()`, each
+group = custom series (whiskers) + scatter series sharing one name; the legend takes its
+swatch from the first series (the custom one, which has no `itemStyle.color`) → ECharts
+default palette green in the legend, while dots are painted `C.muted` gray. Fix: set the
+group color on BOTH series; give baseline a real color from the dataviz-skill palette
+instead of gray (operator expected green).
 
-## Open decisions / morning-override points (flagged for operator; none block)
-- CI method = **cluster bootstrap** (market×6h block, 2000 reps, 95% pct); tunable.
-- Staleness `max_quote_age_s=60`, `min_clusters=5` (null CI below) — tunable → T4 re-runs.
-- Fee = **1.5bps maker, `assumed`** — verify vs official HL fee docs.
-- HL feed SKUs (oracle/sysevents/twap) priced **assumed** at Trades tier — verify vs console billing.
-- **CoinAPI auto-recharge is NOT firing** despite being enabled (operator tops up manually).
-- Deferred LOW findings tracked in LEDGER "Deferred review findings" / "T4/T3/T2 handoff notes".
+### 5. Visual redo under dataviz + frontend-design skills
+Re-audit all charts and page styling against the `dataviz` skill (palette, mark specs,
+legend/tooltip rules, stat tiles) and frontend-design guidance — not just patching the
+specific bugs above. v1's look is "competent generic dark dashboard"; operator wants
+genuinely good. The "looks really good" visual gate has still never been signed off.
 
-## Deliverables by end
-1. `docs/reports/study1_offhours_markout_2026-07-09.md` ✅
-2. `docs/reports/study2_forced_flow_2026-07-09.md` (T8, pending)
-3. Parquet under `data/reports/` (git-ignored); raw pulls under `data/` (git-ignored)
-4. `LEDGER.md` complete + spend reconciliation ≤$180
-5. Follow-ups list (in LEDGER)
+### 6. Market-symbol clarity (from Q&A during exploration; fold into #3 or Chart Lab)
+Facts established (verified live against HL API + local snapshots, 2026-07-10):
+- `SMSN` = Samsung Electronics (GDR ticker), `SKHX` = SK Hynix — Korean HIP-3 perps;
+  studies condition on KRX (Korea Exchange) open/frozen state because of this.
+- `xyz:SKHX` and `xyz:SKHY` are TWO DISTINCT live assets (different oracle px 1474.7 vs
+  169.39, different OI caps $1B vs $250M) — likely re-listing at a different unit scale,
+  same wart as km:US500 vs xyz:SP500 in Study 3.
+- The Hyperliquid app displays deployer-set display names (`setPerpAnnotation` action in
+  the dex registry) like "xyz:SKHYNIX"; the immutable on-chain asset code (`SKHX`) is what
+  the API, CoinAPI, and all our data use. Code ≠ app label; a Chart Lab "market info"
+  affordance (oracle px, OI cap, dex, aliases) would defuse this recurring confusion.
+
+## Suggested order
+
+1 and 4 are small and rage-inducing — fix first for quick wins (load `dataviz` before
+touching them). Then 2 (the headline, largest item). Then 3 + 6 together (popover system).
+5 runs as the lens over all of it, with a screenshot-verified pass at the end.
+
+## Not in scope (unless operator asks)
+
+- The carried review minors in `.superpowers/sdd/progress.md` (all triaged acceptable)
+- echarts 5.x npm advisory (plan-pinned)
+- notebook-intelligence labextension version warning (stale metadata; upstream supports
+  JupyterLab ≥4.5.7 — only act if the operator reports the chat panel failing to load)
