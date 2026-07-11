@@ -33,7 +33,7 @@ from datetime import UTC, datetime, timedelta
 import math
 from pathlib import Path
 import random
-from typing import Iterable, Mapping, Sequence
+from typing import Callable, Iterable, Mapping, Sequence
 
 import polars as pl
 
@@ -74,6 +74,121 @@ class BootstrapCI:
     n: int
     G: int
     low_cluster: bool
+
+
+def cluster_bootstrap_statistic(
+    frame: pl.DataFrame,
+    *,
+    statistic: Callable[[pl.DataFrame], float],
+    cluster_col: str = "cluster_key",
+    n_resamples: int = 2_000,
+    seed: int = 0,
+    min_clusters: int = 5,
+) -> BootstrapCI:
+    """Cluster-bootstrap an arbitrary statistic using the Study-1 resampler.
+
+    Repeated sampled clusters repeat all their rows. A private draw-instance
+    column lets statistics distinguish duplicate cluster occurrences when
+    grouping observations after resampling.
+    """
+
+    if n_resamples < 2_000:
+        raise ValueError("n_resamples must be at least 2000")
+    if not isinstance(min_clusters, int) or isinstance(min_clusters, bool) or min_clusters < 2:
+        raise ValueError("min_clusters must be an integer of at least 2")
+    _require_columns(frame, {cluster_col}, "bootstrap frame")
+    clean = frame.filter(pl.col(cluster_col).is_not_null())
+    group_indices = (
+        clean.with_row_index("_bootstrap_row")
+        .group_by(cluster_col, maintain_order=True)
+        .agg(pl.col("_bootstrap_row"))["_bootstrap_row"]
+        .to_list()
+    )
+    if not group_indices:
+        raise ValueError("no clustered observations")
+    point = float(statistic(clean))
+    G = len(group_indices)
+    if G < min_clusters:
+        return BootstrapCI(point, None, None, clean.height, G, True)
+    rng = random.Random(seed)
+    draws: list[float] = []
+    for _ in range(n_resamples):
+        indices = [
+            row
+            for _ in range(G)
+            for row in group_indices[rng.randrange(G)]
+        ]
+        value = float(statistic(clean[indices]))
+        if math.isfinite(value):
+            draws.append(value)
+    if not draws:
+        raise ValueError("bootstrap statistic produced no finite draws")
+    draws.sort()
+    return BootstrapCI(
+        point_estimate=point,
+        ci_low=_percentile(draws, 0.025),
+        ci_high=_percentile(draws, 0.975),
+        n=clean.height,
+        G=G,
+        low_cluster=False,
+    )
+
+
+def cluster_bootstrap_panel_statistic(
+    frame: pl.DataFrame,
+    *,
+    statistic: Callable[[pl.DataFrame], float],
+    strata_cols: Sequence[str],
+    destination_cols: Sequence[str],
+    cluster_col: str = "cluster_key",
+    n_resamples: int = 2_000,
+    seed: int = 0,
+    min_clusters: int = 5,
+) -> BootstrapCI:
+    """Stratified scalar-panel bootstrap preserving destination time slots.
+
+    Each input row is one already-netted portfolio time block. Whole source
+    blocks are sampled within each stratum and copied into destination slots;
+    destination time columns are restored so repeated blocks remain distinct.
+    """
+
+    if n_resamples < 2_000:
+        raise ValueError("n_resamples must be at least 2000")
+    required = {cluster_col, *strata_cols, *destination_cols}
+    _require_columns(frame, required, "panel bootstrap frame")
+    clean = frame.filter(pl.col(cluster_col).is_not_null()).with_row_index("_bootstrap_row")
+    G = clean[cluster_col].n_unique()
+    if G != clean.height:
+        raise ValueError("panel bootstrap requires one netted row per time-block cluster")
+    point = float(statistic(clean.drop("_bootstrap_row")))
+    if G < min_clusters:
+        return BootstrapCI(point, None, None, clean.height, G, True)
+    strata: dict[tuple[object, ...], list[int]] = {}
+    for index in range(clean.height):
+        signature = tuple(clean[column][index] for column in strata_cols)
+        strata.setdefault(signature, []).append(index)
+    rng = random.Random(seed)
+    draws: list[float] = []
+    destinations = clean.select(list(destination_cols))
+    payload = clean.drop("_bootstrap_row")
+    for _ in range(n_resamples):
+        source_indices = list(range(clean.height))
+        for compatible_blocks in strata.values():
+            for destination_index in compatible_blocks:
+                source_indices[destination_index] = compatible_blocks[rng.randrange(len(compatible_blocks))]
+        sampled = payload[source_indices].with_columns(
+            *[destinations[column].alias(column) for column in destination_cols]
+        )
+        value = float(statistic(sampled))
+        if math.isfinite(value):
+            draws.append(value)
+    if not draws:
+        raise ValueError("panel bootstrap statistic produced no finite draws")
+    draws.sort()
+    return BootstrapCI(
+        point_estimate=point, ci_low=_percentile(draws, 0.025),
+        ci_high=_percentile(draws, 0.975), n=clean.height, G=G, low_cluster=False,
+    )
 
 
 @dataclass
