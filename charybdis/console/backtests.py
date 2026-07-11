@@ -61,7 +61,7 @@ def list_backtests() -> list[dict]:
                     "id": f"{source}:{strategy}",
                     "source": source,
                     "strategy": strategy,
-                    "title": f"{_TITLES[source]} · {strategy}",
+                    "title": f"{_TITLES.get(source, source)} · {strategy}",
                 }
             )
     return out

@@ -41,3 +41,13 @@ def test_get_backtest_unknown_404(console_data_dir):
 def test_backtests_empty_when_dataset_absent(console_data_dir):
     (console_data_dir / "study3_sc_backtest.parquet").unlink()
     assert _client().get("/api/backtests").json() == []
+
+
+def test_list_backtests_source_without_title(console_data_dir, monkeypatch):
+    from charybdis.console import backtests
+
+    monkeypatch.setitem(backtests.PERIOD_RETURN_LOADERS, "extra", lambda s: None)
+    monkeypatch.setitem(backtests._STRATEGY_LISTERS, "extra", lambda: ["alpha"])
+    body = _client().get("/api/backtests").json()
+    entry = next(b for b in body if b["source"] == "extra")
+    assert entry["title"] == "extra · alpha"
