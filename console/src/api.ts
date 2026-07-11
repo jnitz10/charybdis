@@ -55,7 +55,7 @@ export interface SchemaCol {
   name: string
   dtype: string
 }
-export type Cell = string | number | boolean | null
+export type Cell = string | number | boolean | null | Cell[]
 export interface RowsPage {
   total: number
   page: number
