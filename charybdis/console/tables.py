@@ -45,6 +45,10 @@ def _filter_expr(schema: dict[str, pl.DataType], spec: str) -> pl.Expr:
         value = float(raw)
     elif dtype == pl.Boolean:
         value = raw.lower() in ("true", "1")
+    elif isinstance(dtype, pl.Datetime):
+        value = datetime.fromisoformat(raw)
+    elif isinstance(dtype, pl.Date):
+        value = date.fromisoformat(raw)
     else:
         value = raw
     c = pl.col(col)
@@ -70,8 +74,14 @@ def dataset_rows(
         if sort not in schema:
             raise ValueError(f"unknown column: {sort}")
         lf = lf.sort(sort, descending=(order == "desc"), nulls_last=True)
-    total = lf.select(pl.len()).collect().item()
-    df = lf.slice((page - 1) * page_size, page_size).collect()
+    try:
+        total = lf.select(pl.len()).collect().item()
+    except pl.exceptions.PolarsError as e:
+        raise ValueError(str(e)) from e
+    try:
+        df = lf.slice((page - 1) * page_size, page_size).collect()
+    except pl.exceptions.PolarsError as e:
+        raise ValueError(str(e)) from e
     return {
         "total": total,
         "page": page,

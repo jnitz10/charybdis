@@ -54,6 +54,18 @@ def test_rows_numeric_filter(console_data_dir):
     assert 0 < r["total"] < 120
 
 
+def test_rows_datetime_filter(console_data_dir):
+    r = _client().get("/api/datasets/study3_candles_1h/rows?filter=time_open:gt:2026-06-02T00:00:00")
+    assert r.status_code == 200
+    body = r.json()
+    assert 0 < body["total"] < 120
+
+
+def test_rows_datetime_filter_bad_value_400(console_data_dir):
+    r = _client().get("/api/datasets/study3_candles_1h/rows?filter=time_open:gt:notadate")
+    assert r.status_code == 400
+
+
 def test_rows_bad_filter_column_400(console_data_dir):
     r = _client().get("/api/datasets/study3_candles_1h/rows?filter=nope:eq:1")
     assert r.status_code == 400
