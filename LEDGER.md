@@ -18,9 +18,9 @@
 | T4 S-B oracle pull (G-F1 ≤$40 scope) + mechanics reconciliation | codex GPT5.6-High | DONE | 3fcafc5 | 14 tests GREEN; dual review (corr SHIP + adv FIX-FIRST tautology) → reframed, 2 fix passes | **$0 pull** (oracle on disk); feed-reconciliation R²=0.99 (raw premium 0.9957; up-to-13%-affine); intra-hour predictable vs iid null (R²@50m-lead=0.58, iid_excess +0.40) | **G-F2 → S-D keeps prediction framing** |
 | — G-F2 decision | — | — | — | pre-registered F-B: observed R²@min50=0.962 ≥ 0.95 → **S-D (T5) FULL scope (prediction framing survives)** | caveat: raw 0.96@min50 partly partial-observation; long-lead predictability moderate not near-perfect | routed |
 | T5 S-D funding-clock brackets (G-F2 routes scope) | codex GPT5.6-High | DONE | f4c2efa | 8 tests GREEN; adv-review FIX-FIRST (3.5-day coverage + unused tests) → fixed | **F-D: no clock effect** (all brackets overlap baseline); SKHX/SMSN full-window L4-derived; wallet flow vs baseline ~0 | S-D full scope (G-F2), null result |
-| T6 S-E cross-dex spreads + twin-basis risk | codex GPT5.6-High | queued | — | — | — | — | none |
+| T6 S-E cross-dex spreads + twin-basis risk | codex GPT5.6-High | DONE | a6d90dc | 9 tests GREEN; dual review (corr BLOCKER scale-basis + adv) → fixed | **F-E: all 57 twin pairs dead** — basis risk swamps funding edge (57/57); 40/57 never reach breakeven. No spread arb | scale-invariant basis (8 index pairs were unit-artifact) |
 | T7 S-F event-rate normalization + wallet bridge | codex GPT5.6-High | DONE | 04bbea6 | 9 tests GREEN; adv-review FIX-FIRST (circular bridge + pooling artifact) → fixed | **F-F: funding does NOT time forced flow** (per-mkt ratios incl 1; pooled G=2 low_cluster). exposure-normalized rate = T8-gap fix. wallet bridge vs control ~0 (no funding linkage) | market-selection only |
-| T8 consolidated report + spend + close-out | codex GPT5.6-High | queued | — | — | — | — | none |
+| T8 consolidated report + spend + close-out | codex GPT5.6-High | NEXT | — | — | — | consolidate S-A..S-F; report↔parquet spot-recompute | none |
 
 ## Escalations / decisions log
 - **G-F1 (T4 paid-pull gate):** oracle for SKHX/SMSN (S-B clean coins) already fully on disk from Study-2 T5 (498 hourly partitions each, 2026-06-17→07-08). Dry-run `files=0 cost=$0.00`. NO pull; S-B answered from on-disk data. Study-3 new spend = $0.
