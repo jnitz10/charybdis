@@ -6,6 +6,10 @@ import polars as pl
 from charybdis.console import datasets, indicators
 from charybdis.console.tables import json_value
 
+
+class MarketNotFound(LookupError):
+    """Requested market has no rows in the source dataset."""
+
 SOURCES: dict[str, dict] = {
     "study3_1h": {"dataset": "study3_candles_1h", "interval": "1h"},
     "study3_1d": {"dataset": "study3_candles_1d", "interval": "1d"},
@@ -37,7 +41,7 @@ def get_candles(source: str, market: str, ind: list[str]) -> dict:
         .collect()
     )
     if df.height == 0:
-        raise ValueError(f"no rows for market {market!r} in {source}")
+        raise MarketNotFound(f"no rows for market {market!r} in {source}")
     ohlcv = df.rename({"v": "volume"}).select(["open", "high", "low", "close", "volume"])
     payload = {
         "source": source,
@@ -48,7 +52,7 @@ def get_candles(source: str, market: str, ind: list[str]) -> dict:
         "high": df["high"].to_list(),
         "low": df["low"].to_list(),
         "close": df["close"].to_list(),
-        "volume": df["volume" if "volume" in df.columns else "v"].to_list(),
+        "volume": ohlcv["volume"].to_list(),
         "indicators": [],
     }
     for spec_str in ind:

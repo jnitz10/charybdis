@@ -64,14 +64,14 @@ def create_app() -> FastAPI:
         specs = [s for s in ind.split(",") if s]
         try:
             return candles.get_candles(source, market, specs)
+        except candles.MarketNotFound as e:
+            raise HTTPException(status_code=404, detail=str(e))
         except KeyError:
             raise HTTPException(status_code=404, detail=f"unknown source: {source}")
         except FileNotFoundError as e:
             raise HTTPException(status_code=404, detail=f"dataset not present: {e}")
         except ValueError as e:
-            detail = str(e)
-            status = 404 if "no rows" in detail else 400
-            raise HTTPException(status_code=status, detail=detail)
+            raise HTTPException(status_code=400, detail=str(e))
 
     _mount_frontend(app)
     return app
