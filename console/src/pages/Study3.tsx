@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { rowsToObjects, useApi, type RowsPage } from '../api'
 import EChart from '../charts/EChart'
 import { dotWhisker, scatterOption, type CIItem } from '../charts/options'
+import { EXPLAIN } from '../explain'
 import { C } from '../theme'
-import { Card, EmptyState, PageHeader, Spinner } from '../ui'
+import { Card, ChartTitle, EmptyState, PageHeader, Spinner } from '../ui'
 
 const pct = (v: unknown) => `${(Number(v) * 100).toFixed(1)}%`
 
@@ -42,9 +43,10 @@ function CensusSection() {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card>
-        <div className="mb-2 text-sm font-medium text-zinc-300">
-          Funding census: size vs persistence (183 markets)
-        </div>
+        <ChartTitle
+          title="Funding census: size vs persistence (183 markets)"
+          info={EXPLAIN.study3_census_scatter}
+        />
         {scatter && <EChart option={scatter} height={380} />}
         <p className="mt-2 text-xs text-zinc-600">
           Half-life median 1.3h, max 9.9h — the 24h carry bar is structurally unreachable; 0/183
@@ -52,7 +54,7 @@ function CensusSection() {
         </p>
       </Card>
       <Card>
-        <div className="mb-2 text-sm font-medium text-zinc-300">Top mean APR with 95% CI</div>
+        <ChartTitle title="Top mean APR with 95% CI" info={EXPLAIN.study3_census_top} />
         {top && <EChart option={top} height={380} />}
       </Card>
     </div>
@@ -100,9 +102,10 @@ function ClockSection() {
   if (rows.error) return <EmptyState error={rows.error} />
   return (
     <Card>
-      <div className="mb-2 text-sm font-medium text-zinc-300">
-        Funding-clock brackets vs baseline (95% CI) — 12/12 do not separate
-      </div>
+      <ChartTitle
+        title="Funding-clock brackets vs baseline (95% CI) — 12/12 do not separate"
+        info={EXPLAIN.study3_clock}
+      />
       {option ? <EChart option={option} height={420} /> : <EmptyState note="No 'all' group rows." />}
       <p className="mt-2 text-xs text-zinc-600">
         SKHX/SMSN use the full L4 window; the other eight markets are a 3.5-day recent-regime null
@@ -121,9 +124,10 @@ function SpreadsSection() {
   const objs = rowsToObjects(rows.data!).slice(0, 12)
   return (
     <Card>
-      <div className="mb-2 text-sm font-medium text-zinc-300">
-        Cross-dex twin spreads — top funding differentials (0/57 pairs viable)
-      </div>
+      <ChartTitle
+        title="Cross-dex twin spreads — top funding differentials (0/57 pairs viable)"
+        info={EXPLAIN.study3_spreads}
+      />
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
@@ -187,9 +191,10 @@ function HazardSection() {
   if (rows.error) return <EmptyState error={rows.error} />
   return (
     <Card>
-      <div className="mb-2 text-sm font-medium text-zinc-300">
-        Forced-flow event rate by funding bucket (95% CI)
-      </div>
+      <ChartTitle
+        title="Forced-flow event rate by funding bucket (95% CI)"
+        info={EXPLAIN.study3_hazard}
+      />
       {option ? <EChart option={option} height={320} /> : <EmptyState note="No apr_bucket rows." />}
       <p className="mt-2 text-xs text-zinc-600">
         Per-market rate-ratio CIs include 1 — funding does not time forced flow within a market.

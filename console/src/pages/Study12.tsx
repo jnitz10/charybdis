@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { rowsToObjects, useApi, type RowsPage, type Study1Markout } from '../api'
 import EChart from '../charts/EChart'
 import { dotWhisker, lineOption, type CIItem } from '../charts/options'
+import { EXPLAIN } from '../explain'
 import { C } from '../theme'
-import { Card, EmptyState, PageHeader, Select, Spinner } from '../ui'
+import { Card, ChartTitle, EmptyState, PageHeader, Select, Spinner } from '../ui'
 
 function Study1Section() {
   const markout = useApi<Study1Markout>('/api/study1/markout')
@@ -22,12 +23,11 @@ function Study1Section() {
   }))
   return (
     <Card>
-      <div className="mb-3 flex items-center justify-between">
-        <div className="text-sm font-medium text-zinc-300">
-          Net maker markout by horizon and session
-        </div>
-        <Select label="market" value={active} options={d.markets} onChange={setMarket} />
-      </div>
+      <ChartTitle
+        title="Net maker markout by horizon and session"
+        info={EXPLAIN.study1_markout}
+        right={<Select label="market" value={active} options={d.markets} onChange={setMarket} />}
+      />
       <EChart option={lineOption({ categories: d.horizons, series, yName: 'net markout (bps)' })} height={360} />
       <p className="mt-2 text-xs text-zinc-600">
         Stale quotes excluded. L2 fill simulation is an optimistic upper bound (no cancel/priority
@@ -70,12 +70,11 @@ function Study2Section() {
   if (rows.error) return <EmptyState error={rows.error} />
   return (
     <Card>
-      <div className="mb-3 flex items-center justify-between">
-        <div className="text-sm font-medium text-zinc-300">
-          Forced-flow proxy vs matched baseline (95% CI)
-        </div>
-        <Select label="horizon" value={horizon} options={horizons} onChange={setHorizon} />
-      </div>
+      <ChartTitle
+        title="Forced-flow proxy vs matched baseline (95% CI)"
+        info={EXPLAIN.study2_dotwhisker}
+        right={<Select label="horizon" value={horizon} options={horizons} onChange={setHorizon} />}
+      />
       {option ? <EChart option={option} height={300} /> : <EmptyState note="No rows for this horizon." />}
       <p className="mt-2 text-xs text-zinc-600">
         All events are heuristic proxy tags (0 confirmed liquidations in HLSYSTEMEVENTS). Post

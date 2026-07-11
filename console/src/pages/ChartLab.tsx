@@ -6,7 +6,8 @@ import {
   type IndicatorMeta,
 } from '../api'
 import CandleChart, { type OverlaySeries, type Pane } from '../charts/CandleChart'
-import { Card, EmptyState, PageHeader, Select, Spinner } from '../ui'
+import { EXPLAIN } from '../explain'
+import { Card, EmptyState, InfoPopover, PageHeader, Select, Spinner } from '../ui'
 
 function defaultSpec(m: IndicatorMeta): string {
   const params = Object.values(m.params)
@@ -59,6 +60,7 @@ export default function ChartLab() {
       <PageHeader title="Chart Lab" sub="Candles + indicators over any harvested market." />
       <Card className="mb-4">
         <div className="flex flex-wrap items-center gap-4">
+          <InfoPopover title="Sources, indicators, symbols">{EXPLAIN.chartlab}</InfoPopover>
           <Select
             label="source"
             value={source!.id}

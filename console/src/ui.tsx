@@ -1,5 +1,69 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ApiError } from './api'
+
+/** Click-a-`?` explainer. Invisible until clicked; closes on Esc or outside click. */
+export function InfoPopover({ title, children }: { title: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+  return (
+    <span className="relative inline-flex" ref={ref}>
+      <button
+        aria-label={`About: ${title}`}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] leading-none transition-colors ${
+          open
+            ? 'border-cyan-500 text-cyan-300'
+            : 'border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'
+        }`}
+      >
+        ?
+      </button>
+      {open && (
+        <div className="absolute left-0 top-6 z-30 w-[26rem] max-w-[80vw] cursor-auto rounded-lg border border-zinc-700 bg-zinc-900 p-4 text-left shadow-xl shadow-black/50">
+          <div className="mb-2 text-sm font-medium text-zinc-200">{title}</div>
+          <div className="space-y-2 text-xs font-normal leading-relaxed text-zinc-400">
+            {children}
+          </div>
+        </div>
+      )}
+    </span>
+  )
+}
+
+/** Chart header row: title + optional `?` explainer on the left, controls on the right. */
+export function ChartTitle({
+  title,
+  info,
+  right,
+}: {
+  title: string
+  info?: ReactNode
+  right?: ReactNode
+}) {
+  return (
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+        {title}
+        {info && <InfoPopover title={title}>{info}</InfoPopover>}
+      </div>
+      {right}
+    </div>
+  )
+}
 
 export function PageHeader({ title, sub }: { title: string; sub?: string }) {
   return (

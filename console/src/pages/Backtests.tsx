@@ -3,7 +3,8 @@ import { useApi, type BacktestDetail, type BacktestEntry } from '../api'
 import EChart from '../charts/EChart'
 import { monthlyHeatmap } from '../charts/options'
 import TimeSeriesChart from '../charts/TimeSeriesChart'
-import { Card, EmptyState, PageHeader, Spinner, StatCard } from '../ui'
+import { EXPLAIN } from '../explain'
+import { Card, ChartTitle, EmptyState, PageHeader, Spinner, StatCard } from '../ui'
 
 const pct = (v: number | null | undefined) =>
   v == null ? '—' : `${(v * 100).toFixed(1)}%`
@@ -75,16 +76,16 @@ export default function Backtests() {
             </div>
           )}
           <Card>
-            <div className="mb-2 text-sm font-medium text-zinc-300">Equity (cumulative net return)</div>
+            <ChartTitle title="Equity (cumulative net return)" info={EXPLAIN.backtests_equity} />
             <TimeSeriesChart points={d.equity} percent height={300} />
           </Card>
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
-              <div className="mb-2 text-sm font-medium text-zinc-300">Drawdown</div>
+              <ChartTitle title="Drawdown" info={EXPLAIN.backtests_drawdown} />
               <TimeSeriesChart points={d.drawdown} percent height={240} />
             </Card>
             <Card>
-              <div className="mb-2 text-sm font-medium text-zinc-300">Rolling Sharpe (30 periods)</div>
+              <ChartTitle title="Rolling Sharpe (30 periods)" info={EXPLAIN.backtests_sharpe} />
               {d.rolling_sharpe.length ? (
                 <TimeSeriesChart points={d.rolling_sharpe} height={240} />
               ) : (
@@ -95,7 +96,7 @@ export default function Backtests() {
             </Card>
           </div>
           <Card>
-            <div className="mb-2 text-sm font-medium text-zinc-300">Monthly returns</div>
+            <ChartTitle title="Monthly returns" info={EXPLAIN.backtests_monthly} />
             <EChart option={monthlyHeatmap(d.monthly)} height={80 + 40 * new Set(d.monthly.map((m) => m.ym.slice(0, 4))).size} />
           </Card>
         </div>
