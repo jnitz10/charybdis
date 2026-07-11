@@ -10,3 +10,14 @@ read-only data, no order placement, no wallet code, no keys.
   no code imports across repos.
 
 Data lives under `data/` (git-ignored). Reports under `docs/reports/`.
+
+## Research console
+
+Interactive dashboard over `data/reports/*.parquet`.
+
+```bash
+cd console && npm install && npm run build && cd ..   # first time / after frontend changes
+uv run charybdis-console                              # serves http://localhost:8787
+```
+
+Frontend development: `uv run charybdis-console` in one shell, `cd console && npm run dev` in another (Vite proxies `/api`).
