@@ -15,10 +15,16 @@ const SERIES = [
   '#d95926',
 ]
 
+/** Data face — numerals, axes, tables, stats. Prose stays in the body sans. */
+export const MONO =
+  "ui-monospace, 'SF Mono', 'Cascadia Mono', 'JetBrains Mono', Menlo, Consolas, monospace"
+
 export const C = {
   bg: '#09090b',
   panel: '#18181b',
   border: '#27272a',
+  // chart gridlines sit a step below the UI border so marks stay in front
+  grid: '#1f1f23',
   text: '#d4d4d8',
   muted: '#71717a',
   accent: '#22d3ee',

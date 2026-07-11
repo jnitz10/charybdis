@@ -15,9 +15,9 @@ export default function Overview() {
       <div className="grid gap-6 xl:grid-cols-3">
         {findings.data!.studies.map((s) => (
           <Card key={s.id} className="flex flex-col">
-            <div className="mb-1 text-xs uppercase tracking-wider text-zinc-500">{s.date}</div>
+            <div className="mb-1 font-mono text-xs tracking-wider text-zinc-500">{s.date}</div>
             <h2 className="text-base font-semibold text-zinc-100">{s.title}</h2>
-            <div className="mt-2 inline-block w-fit rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300">
+            <div className="mt-2.5 w-fit border-l-2 border-zinc-600 bg-zinc-800/40 py-1 pl-2.5 pr-3 font-mono text-[11px] leading-relaxed text-zinc-200">
               {s.verdict}
             </div>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400">{s.summary}</p>
@@ -25,7 +25,7 @@ export default function Overview() {
               {s.numbers.map((n) => (
                 <div key={n.label} className="flex items-baseline justify-between gap-3 border-b border-zinc-900 pb-1.5">
                   <dt className="text-xs text-zinc-500">{n.label}</dt>
-                  <dd className="text-right text-xs font-medium tabular-nums text-zinc-200">
+                  <dd className="text-right font-mono text-xs font-medium tabular-nums text-zinc-200">
                     {n.value}
                   </dd>
                 </div>
@@ -35,7 +35,7 @@ export default function Overview() {
               <Link to={s.page} className="text-sm font-medium text-cyan-400 hover:underline">
                 Explore →
               </Link>
-              <span className="text-[10px] text-zinc-600">{s.report}</span>
+              <span className="font-mono text-[10px] text-zinc-600">{s.report}</span>
             </div>
           </Card>
         ))}

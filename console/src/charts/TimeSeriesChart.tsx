@@ -8,7 +8,7 @@ import {
   type Time,
 } from 'lightweight-charts'
 import type { TimePoint } from '../api'
-import { C } from '../theme'
+import { C, MONO } from '../theme'
 
 export default function TimeSeriesChart({
   points,
@@ -31,8 +31,10 @@ export default function TimeSeriesChart({
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: C.muted,
+        fontFamily: MONO,
+        fontSize: 11,
       },
-      grid: { vertLines: { color: C.border }, horzLines: { color: C.border } },
+      grid: { vertLines: { color: C.grid }, horzLines: { color: C.grid } },
       timeScale: { timeVisible: true, borderColor: C.border },
       rightPriceScale: { borderColor: C.border },
     })

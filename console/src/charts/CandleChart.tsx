@@ -8,7 +8,7 @@ import {
   type ISeriesApi,
   type Time,
 } from 'lightweight-charts'
-import { C } from '../theme'
+import { C, MONO } from '../theme'
 
 export interface OverlaySeries {
   name: string
@@ -55,11 +55,13 @@ export default function CandleChart({
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: C.muted,
+        fontFamily: MONO,
+        fontSize: 11,
         panes: { separatorColor: C.border },
       },
       grid: {
-        vertLines: { color: C.border },
-        horzLines: { color: C.border },
+        vertLines: { color: C.grid },
+        horzLines: { color: C.grid },
       },
       timeScale: { timeVisible: true, borderColor: C.border },
       rightPriceScale: { borderColor: C.border },

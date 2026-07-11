@@ -98,7 +98,7 @@ export function StatCard({
   return (
     <Card>
       <div className="text-xs uppercase tracking-wider text-zinc-500">{label}</div>
-      <div className={`mt-1 text-lg font-semibold tabular-nums ${toneCls}`}>{value}</div>
+      <div className={`mt-1 font-mono text-lg font-semibold tabular-nums ${toneCls}`}>{value}</div>
       {sub && <div className="mt-0.5 text-xs text-zinc-500">{sub}</div>}
     </Card>
   )
@@ -115,7 +115,7 @@ export function EmptyState({ error, note }: { error?: ApiError; note?: string })
         <div className="text-sm text-zinc-400">{msg}</div>
         {error?.status === 404 && (
           <div className="mt-1 text-xs text-zinc-600">
-            This view needs a parquet that is not present in data/reports/.
+            This view needs a dataset that is not present on disk.
           </div>
         )}
       </div>

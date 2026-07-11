@@ -105,7 +105,7 @@ export default function ChartLab() {
       {candles.error && <EmptyState error={candles.error} />}
       {candles.data && (
         <Card>
-          <div className="mb-2 text-sm text-zinc-400">
+          <div className="mb-2 font-mono text-xs text-zinc-400">
             {candles.data.market} · {candles.data.interval} · {candles.data.time.length} bars
           </div>
           {candles.data.warnings?.length > 0 && (

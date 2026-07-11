@@ -45,7 +45,7 @@ function RowsTable({ columns, rows }: { columns: string[]; rows: Cell[][] }) {
           {rows.map((r, i) => (
             <tr key={i} className="border-b border-zinc-900 text-zinc-300">
               {r.map((v, j) => (
-                <td key={j} className="whitespace-nowrap px-2 py-1.5 tabular-nums">
+                <td key={j} className="whitespace-nowrap px-2 py-1.5 font-mono text-[11px] tabular-nums">
                   {fmtCell(v)}
                 </td>
               ))}
@@ -92,7 +92,7 @@ function RawMarketView({ feed, market }: { feed: string; market: string }) {
       {preview.error && <EmptyState error={preview.error} />}
       {preview.data && (
         <>
-          <div className="mb-2 text-xs text-zinc-500">
+          <div className="mb-2 font-mono text-xs text-zinc-500">
             {preview.data.day} · era {preview.data.era} · {preview.data.total.toLocaleString()}{' '}
             rows · {fmtBytes(preview.data.size_bytes)} gzip · showing first{' '}
             {preview.data.rows.length}
@@ -336,7 +336,7 @@ export default function DataBrowser() {
                       {rows.data.rows.map((r, i) => (
                         <tr key={i} className="border-b border-zinc-900 text-zinc-300">
                           {r.map((v, j) => (
-                            <td key={j} className="whitespace-nowrap px-2 py-1.5 tabular-nums">
+                            <td key={j} className="whitespace-nowrap px-2 py-1.5 font-mono text-[11px] tabular-nums">
                               {fmtCell(v)}
                             </td>
                           ))}

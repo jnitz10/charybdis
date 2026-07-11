@@ -140,12 +140,12 @@ function SpreadsSection() {
           <tbody>
             {objs.map((o) => (
               <tr key={String(o.pair_id)} className="border-b border-zinc-900 text-zinc-300">
-                <td className="px-2 py-1.5">{String(o.pair_id)}</td>
-                <td className="px-2 py-1.5 tabular-nums">{pct(o.mean_abs_diff_apr)}</td>
-                <td className="px-2 py-1.5 tabular-nums">{Number(o.persistence_half_life_hours).toFixed(2)}</td>
-                <td className="px-2 py-1.5 tabular-nums">{pct(o.pct_time_gt_maker_breakeven)}</td>
-                <td className="px-2 py-1.5 tabular-nums">{pct(o.pct_time_gt_taker_breakeven)}</td>
-                <td className="px-2 py-1.5 tabular-nums text-rose-400">
+                <td className="px-2 py-1.5 font-mono text-[11px]">{String(o.pair_id)}</td>
+                <td className="px-2 py-1.5 font-mono text-[11px] tabular-nums">{pct(o.mean_abs_diff_apr)}</td>
+                <td className="px-2 py-1.5 font-mono text-[11px] tabular-nums">{Number(o.persistence_half_life_hours).toFixed(2)}</td>
+                <td className="px-2 py-1.5 font-mono text-[11px] tabular-nums">{pct(o.pct_time_gt_maker_breakeven)}</td>
+                <td className="px-2 py-1.5 font-mono text-[11px] tabular-nums">{pct(o.pct_time_gt_taker_breakeven)}</td>
+                <td className="px-2 py-1.5 font-mono text-[11px] tabular-nums text-rose-400">
                   {Number(o.basis_p95_abs_excursion) > Number(o.p95_diff_horizon_return) ? 'basis swamps edge' : 'edge survives'}
                 </td>
               </tr>

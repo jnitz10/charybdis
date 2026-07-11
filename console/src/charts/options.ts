@@ -1,5 +1,5 @@
 import type { EChartsOption, SeriesOption } from 'echarts'
-import { C } from '../theme'
+import { C, MONO } from '../theme'
 
 export const base: EChartsOption = {
   backgroundColor: 'transparent',
@@ -8,7 +8,7 @@ export const base: EChartsOption = {
     trigger: 'axis',
     backgroundColor: C.panel,
     borderColor: C.border,
-    textStyle: { color: C.text },
+    textStyle: { color: C.text, fontSize: 12 },
   },
   grid: { left: 64, right: 24, top: 36, bottom: 44 },
 }
@@ -17,9 +17,9 @@ export function axis() {
   return {
     axisLine: { lineStyle: { color: C.border } },
     axisTick: { lineStyle: { color: C.border } },
-    axisLabel: { color: C.muted },
-    splitLine: { lineStyle: { color: C.border } },
-    nameTextStyle: { color: C.muted },
+    axisLabel: { color: C.muted, fontFamily: MONO, fontSize: 11 },
+    splitLine: { lineStyle: { color: C.grid } },
+    nameTextStyle: { color: C.muted, fontFamily: MONO, fontSize: 11 },
   }
 }
 
@@ -162,7 +162,7 @@ export function monthlyHeatmap(monthly: { ym: string; ret: number }[]): EChartsO
       orient: 'horizontal',
       left: 'center',
       bottom: 4,
-      textStyle: { color: C.muted },
+      textStyle: { color: C.muted, fontFamily: MONO, fontSize: 11 },
       inRange: { color: [C.down, '#3f3f46', C.up] },
     },
     series: [
@@ -172,6 +172,8 @@ export function monthlyHeatmap(monthly: { ym: string; ret: number }[]): EChartsO
         label: {
           show: true,
           color: C.text,
+          fontFamily: MONO,
+          fontSize: 11,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           formatter: (p: any) => `${(p.data as number[])[2]}%`,
         },
