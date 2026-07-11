@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from charybdis.console import backtests, candles, datasets, findings, indicators, study1, tables
+from charybdis.console import backtests, candles, datasets, findings, indicators, rawdata, study1, tables
 
 
 def _check_present(name: str) -> None:
@@ -74,6 +74,41 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=400, detail=str(e))
         except (OverflowError, ZeroDivisionError) as e:
             raise HTTPException(status_code=400, detail=f"bad indicator params: {e}")
+
+    @app.get("/api/raw/feeds")
+    def raw_feeds() -> list[dict]:
+        return rawdata.list_feeds()
+
+    @app.get("/api/raw/markets")
+    def raw_markets(feed: str) -> list[dict]:
+        try:
+            return rawdata.markets(feed)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+
+    @app.get("/api/raw/files")
+    def raw_files(
+        feed: str, market: str | None = None, partition: str | None = None
+    ) -> list[dict]:
+        try:
+            return rawdata.files(feed, market, partition)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+
+    @app.get("/api/raw/preview")
+    def raw_preview(feed: str, partition: str, market: str = "all", limit: int = 100) -> dict:
+        try:
+            return rawdata.preview(feed, partition, market, limit)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except OSError as e:
+            raise HTTPException(status_code=500, detail=f"unreadable file: {e}")
 
     @app.get("/api/backtests")
     def list_backtests() -> list[dict]:

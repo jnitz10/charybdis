@@ -106,6 +106,11 @@ export default function ChartLab() {
           <div className="mb-2 text-sm text-zinc-400">
             {candles.data.market} · {candles.data.interval} · {candles.data.time.length} bars
           </div>
+          {candles.data.warnings?.length > 0 && (
+            <div className="mb-2 text-xs text-amber-500">
+              {candles.data.warnings.join(' · ')}
+            </div>
+          )}
           <CandleChart
             time={candles.data.time}
             open={candles.data.open}

@@ -23,7 +23,7 @@ def json_value(v: Any) -> Any:
 
 
 def dataset_schema(name: str) -> dict:
-    schema = pl.read_parquet_schema(datasets.dataset_path(name))
+    schema = datasets.scan_dataset(name).collect_schema()
     return {
         "name": name,
         "columns": [{"name": c, "dtype": str(t)} for c, t in schema.items()],
@@ -67,7 +67,7 @@ def dataset_rows(
     page = max(1, page)
     page_size = min(max(1, page_size), 500)
     lf = datasets.scan_dataset(name)
-    schema = dict(pl.read_parquet_schema(datasets.dataset_path(name)))
+    schema = dict(lf.collect_schema())
     for spec in filters or []:
         lf = lf.filter(_filter_expr(schema, spec))
     if sort:

@@ -141,6 +141,17 @@ def scan_oracle_prices(
     )
 
 
+def scan_flat_file(
+    source: str | Path,
+    *,
+    columns: Sequence[str] | None = None,
+) -> pl.LazyFrame:
+    """Lazily scan any standard-key flat file, inferring dataset and era."""
+
+    key = parse_flat_file_key(source)
+    return _scan_dataset(source, key.dataset, key=None, era=None, columns=columns)
+
+
 def scan_report_parquet(
     source: str | Path,
     *,

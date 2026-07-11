@@ -98,8 +98,79 @@ def console_data_dir(tmp_path, monkeypatch):
     pl.DataFrame(fills).write_parquet(d / "study1_fills_l2.parquet")
 
     monkeypatch.setenv("CHARYBDIS_DATA_DIR", str(d))
-    # datasets module caches by mtime; clear between tests
-    from charybdis.console import datasets
+    # module-level caches key on mtime; clear between tests
+    from charybdis.console import datasets, rawdata
 
     datasets._PAYLOAD_CACHE.clear()
+    rawdata._INDEX_CACHE.clear()
+    rawdata._CANDLE_CACHE.clear()
     return d
+
+
+L2_TRADES_HEADER = (
+    "time_exchange;time_coinapi;guid;price;base_amount;taker_side;"
+    "id_exch_guid;id_exch_int_inc;order_id_maker;order_id_taker"
+)
+L4_TRADES_HEADER = L2_TRADES_HEADER + ";user_taker;user_maker"
+
+
+def write_gz(path, text: str) -> None:
+    import gzip
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(gzip.compress(text.encode()))
+
+
+def l2_trades_csv(day: str, prices: list[float]) -> str:
+    rows = [
+        f"{day}T10:00:{i:02d}.0370000;{day}T10:00:{i:02d}.1000000;g{i};{px};0.5;BUY;;1;;"
+        for i, px in enumerate(prices)
+    ]
+    return "\n".join([L2_TRADES_HEADER, *rows, ""])
+
+
+def l4_trades_csv(day: str, prices: list[float]) -> str:
+    rows = [
+        f"{day}T11:00:{i:02d}.0370000;{day}T11:00:{i:02d}.1000000;g{i};{px};2.0;SELL;;1;;;0xaa;0xbb"
+        for i, px in enumerate(prices)
+    ]
+    return "\n".join([L4_TRADES_HEADER, *rows, ""])
+
+
+@pytest.fixture()
+def raw_data_dir(console_data_dir, tmp_path):
+    """Tiny raw CoinAPI archive next to the reports dir (raw root = tmp_path)."""
+    sc = "SC-HYPERLIQUID_DPERP_KM_US500_USDC+S-KM__003AUS500.csv.gz"
+    sc4 = "SC-HYPERLIQUIDL4_DPERP_KM_US500_USDC+S-KM__003AUS500.csv.gz"
+    trades = tmp_path / "T-TRADES"
+    write_gz(
+        trades / "D-20260311/E-HYPERLIQUID" / f"IDDI-1+{sc}",
+        l2_trades_csv("2026-03-11", [100.0, 101.0, 99.0]),
+    )
+    # 2026-03-12 is covered by BOTH eras: candles must keep only the L4 side
+    write_gz(
+        trades / "D-20260312/E-HYPERLIQUID" / f"IDDI-1+{sc}",
+        l2_trades_csv("2026-03-12", [500.0, 500.0]),
+    )
+    write_gz(
+        trades / "D-2026031211/E-HYPERLIQUIDL4" / f"IDDI-2+{sc4}",
+        l4_trades_csv("2026-03-12", [102.0, 103.0]),
+    )
+    write_gz(
+        tmp_path / "T-HLSYSTEMEVENTS/D-2026031211/E-HYPERLIQUIDL4.csv.gz",
+        "time_exchange;time_coinapi;exchange_id;block_number;event_type;json_payload\n"
+        '2026-03-12T11:00:08.3575243;2026-03-12T11:00:08.5069781;HYPERLIQUIDL4;1;Evt;{"a":1}\n',
+    )
+    write_gz(
+        tmp_path / "T-HLORACLEPRICES/D-2026031211/E-HYPERLIQUIDL4/IDDI-3+S-GOLD.csv.gz",
+        "time_exchange;time_coinapi;px\n2026-03-12T11:00:00.0000000;2026-03-12T11:00:00.1000000;2411.5\n",
+    )
+    # loose parquet at the data root and a parts directory under reports/
+    pl.DataFrame({"coin": ["GOLD"], "funding_rate": [0.0001]}).write_parquet(
+        tmp_path / "loose_funding.parquet"
+    )
+    parts = console_data_dir / "parts_ds"
+    parts.mkdir()
+    pl.DataFrame({"market": ["a"], "x": [1.0]}).write_parquet(parts / "p1.parquet")
+    pl.DataFrame({"market": ["b"], "x": [2.0]}).write_parquet(parts / "p2.parquet")
+    return tmp_path

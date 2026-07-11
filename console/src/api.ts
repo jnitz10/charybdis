@@ -49,9 +49,36 @@ export function useApi<T>(path: string | null) {
 
 export interface DatasetInfo {
   name: string
+  kind: 'table' | 'parts'
+  files: number
   columns: number
   size_bytes: number
   mtime: number
+}
+export interface RawFeed {
+  feed: string
+  partitions: number
+  files: number
+  size_bytes: number
+  first_day: string
+  last_day: string
+  eras: string[]
+  markets: number
+}
+export interface RawMarket {
+  market: string
+  files: number
+  size_bytes: number
+  first_day: string
+  last_day: string
+  eras: string[]
+}
+export interface RawFileEntry {
+  partition: string
+  day: string
+  era: string
+  market: string
+  size_bytes: number
 }
 export interface SchemaCol {
   name: string
@@ -63,6 +90,17 @@ export interface RowsPage {
   page: number
   page_size: number
   columns: string[]
+  rows: Cell[][]
+}
+export interface RawPreview {
+  feed: string
+  partition: string
+  day: string
+  era: string
+  market: string
+  size_bytes: number
+  total: number
+  columns: SchemaCol[]
   rows: Cell[][]
 }
 export interface IndicatorMeta {
@@ -79,6 +117,7 @@ export interface CandlePayload {
   source: string
   market: string
   interval: string
+  warnings: string[]
   time: number[]
   open: number[]
   high: number[]
