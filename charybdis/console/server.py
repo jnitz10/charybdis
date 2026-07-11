@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from charybdis.console import datasets, tables
+from charybdis.console import candles, datasets, indicators, tables
 
 
 def _check_present(name: str) -> None:
@@ -50,6 +50,28 @@ def create_app() -> FastAPI:
             return tables.dataset_rows(name, page, page_size, sort, order, filter)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
+
+    @app.get("/api/indicators")
+    def indicator_registry() -> list[dict]:
+        return indicators.registry_meta()
+
+    @app.get("/api/candles/sources")
+    def candle_sources() -> list[dict]:
+        return candles.list_sources()
+
+    @app.get("/api/candles")
+    def get_candles(source: str, market: str, ind: str = "") -> dict:
+        specs = [s for s in ind.split(",") if s]
+        try:
+            return candles.get_candles(source, market, specs)
+        except KeyError:
+            raise HTTPException(status_code=404, detail=f"unknown source: {source}")
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=f"dataset not present: {e}")
+        except ValueError as e:
+            detail = str(e)
+            status = 404 if "no rows" in detail else 400
+            raise HTTPException(status_code=status, detail=detail)
 
     _mount_frontend(app)
     return app
