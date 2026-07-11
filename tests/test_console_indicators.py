@@ -53,6 +53,13 @@ def test_macd_constant_is_zero():
     assert set(out.columns) == {"macd", "macd_signal", "macd_hist"}
 
 
+def test_compute_rejects_nonpositive_params():
+    with pytest.raises(ValueError):
+        indicators.compute("sma:-3", _ohlcv([1, 2, 3]))
+    with pytest.raises(ValueError):
+        indicators.compute("rsi:0", _ohlcv([1, 2, 3]))
+
+
 def test_bbands_constant_collapses():
     _, out = indicators.compute("bbands:5:2", _ohlcv([7.0] * 10))
     assert out["bb_mid_5"][-1] == pytest.approx(7.0)

@@ -55,3 +55,10 @@ def test_candles_bad_indicator_400(console_data_dir):
 def test_candles_bad_indicator_named_no_rows_400(console_data_dir):
     r = _client().get("/api/candles?source=study3_1h&market=xyz%3AAAA&ind=no%20rows")
     assert r.status_code == 400
+
+
+def test_candles_nonpositive_indicator_param_400(console_data_dir):
+    r = _client().get("/api/candles?source=study3_1h&market=xyz%3AAAA&ind=sma:-3")
+    assert r.status_code == 400
+    r = _client().get("/api/candles?source=study3_1h&market=xyz%3AAAA&ind=rsi:0")
+    assert r.status_code == 400

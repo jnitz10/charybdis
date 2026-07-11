@@ -72,6 +72,8 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail=f"dataset not present: {e}")
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
+        except (OverflowError, ZeroDivisionError) as e:
+            raise HTTPException(status_code=400, detail=f"bad indicator params: {e}")
 
     @app.get("/api/backtests")
     def list_backtests() -> list[dict]:
@@ -107,6 +109,8 @@ def _mount_frontend(app: FastAPI) -> None:
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def spa(full_path: str) -> FileResponse:
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="unknown API route")
         candidate = dist / full_path
         if full_path and candidate.is_file():
             return FileResponse(candidate)

@@ -49,9 +49,12 @@ def compute(spec_str: str, ohlcv: pl.DataFrame) -> tuple[IndicatorSpec, pl.DataF
     kwargs: dict[str, int | float] = dict(spec.params)
     for (pname, default), raw in zip(spec.params.items(), raw_params):
         try:
-            kwargs[pname] = type(default)(raw)
+            value = type(default)(raw)
         except ValueError as e:
             raise ValueError(f"{name}: bad param {pname}={raw!r}") from e
+        if isinstance(value, (int, float)) and value <= 0:
+            raise ValueError(f"{name}: param {pname} must be > 0")
+        kwargs[pname] = value
     return spec, spec.fn(ohlcv, **kwargs)
 
 
