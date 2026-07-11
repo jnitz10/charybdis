@@ -1,8 +1,24 @@
 # HANDOFF — Research console: operator feedback fix round (2026-07-10)
 
+## STATUS: executed 2026-07-10 (evening session) — all six items shipped
+
+| # | Item | Commit |
+|---|------|--------|
+| 1 | Chart viewport reset (CandleChart/TimeSeriesChart persistent instances, useApi stale-while-revalidate, resetKey) | `72e2a8c` |
+| 4 | Dot-whisker legend/color bug + validated dark series palette, baseline = green | `72e2a8c` |
+| 2 | Raw CoinAPI browsing (feeds/markets/partitions/preview API, parts dirs + loose parquets, raw_trades_1m/5m/1h Chart Lab sources, corrupt-gzip salvage w/ warnings) | `7ec99ea` |
+| 3+6 | Click-? popovers on every chart + symbol glossary (SKHX/SKHY, label≠code, KRX, eras) | `5582c18` |
+| 5 | Visual pass (mono data face, verdict stamps, chart chrome, sidebar status, catch-all route) | `2101033` |
+
+Suite: 190 passed, 1 skipped. Screenshot-verified per page. **Still owed: the
+operator's own "looks really good" sign-off** — everything below is context if
+another round is requested.
+
+---
+
 The research console v1 (spec `docs/superpowers/specs/2026-07-10-research-console-design.md`)
 merged to main at `952fa8e`. The operator then explored it and gave the feedback below.
-This document is the work order for the fix round. Previous HANDOFF (Studies 1–2
+This document was the work order for the fix round. Previous HANDOFF (Studies 1–2
 orchestration) is superseded; see git history if needed.
 
 ## Process directives (operator-mandated, non-negotiable)
