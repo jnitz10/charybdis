@@ -217,3 +217,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# console frontend
+console/node_modules/
+console/dist/
