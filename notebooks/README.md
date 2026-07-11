@@ -28,6 +28,14 @@ Settings persist in `~/.jupyter/nbi/config.json`.
 Usage: type what you want in the chat ("load the funding census and plot APR
 vs half-life") — NBI's agent can create and edit notebook cells directly.
 
+### Inline per-cell prompting (the fast flow)
+
+Cursor in a cell → **Ctrl+G** (or the sparkle icon on the cell toolbar) → type the
+prompt in the popover → **Ctrl+Enter** accepts the generated code into the cell,
+**Esc** dismisses. Works in code cells and .py editors. Inline chat and tab
+completions call the Anthropic API directly (unlike the sidebar's Claude mode), so
+export `ANTHROPIC_API_KEY` before `uv run jupyter lab` for this flow.
+
 ## Conventions
 
 - Notebooks are exploratory scratch space; anything worth keeping graduates

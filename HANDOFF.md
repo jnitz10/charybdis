@@ -100,4 +100,5 @@ touching them). Then 2 (the headline, largest item). Then 3 + 6 together (popove
 - The carried review minors in `.superpowers/sdd/progress.md` (all triaged acceptable)
 - echarts 5.x npm advisory (plan-pinned)
 - notebook-intelligence labextension version warning (stale metadata; upstream supports
-  JupyterLab ≥4.5.7 — only act if the operator reports the chat panel failing to load)
+  JupyterLab ≥4.5.7). RESOLVED: operator tested notebooks 2026-07-10 — working, including
+  the Ctrl+G inline per-cell prompting flow (documented in notebooks/README.md). No action.
