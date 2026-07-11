@@ -142,3 +142,7 @@ export interface Study1Markout {
   segments: string[]
   cells: MarkoutCell[]
 }
+
+export function rowsToObjects(page: RowsPage): Record<string, Cell>[] {
+  return page.rows.map((r) => Object.fromEntries(page.columns.map((c, i) => [c, r[i]])))
+}
