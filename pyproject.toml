@@ -10,14 +10,18 @@ requires-python = ">=3.11"
 dependencies = [
     "boto3",
     "exchange-calendars",
+    "fastapi",
     "httpx",
     "polars",
     "pyarrow",
     "pytest",
+    "pyyaml",
+    "uvicorn",
     "zstandard",
 ]
 
 [project.scripts]
+charybdis-console = "charybdis.console.server:main"
 charybdis-ffs3 = "charybdis.ffs3:main"
 
 [tool.pytest.ini_options]
