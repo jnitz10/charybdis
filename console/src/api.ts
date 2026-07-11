@@ -33,10 +33,12 @@ export function useApi<T>(path: string | null) {
       return
     }
     let live = true
-    setState({ loading: true })
+    // Keep the previous payload while refetching (and on error) so consumers —
+    // notably mounted charts — aren't unmounted by a transient data gap.
+    setState((s) => ({ data: s.data, loading: true }))
     apiGet<T>(path).then(
       (data) => live && setState({ data, loading: false }),
-      (error: ApiError) => live && setState({ error, loading: false }),
+      (error: ApiError) => live && setState((s) => ({ data: s.data, error, loading: false })),
     )
     return () => {
       live = false

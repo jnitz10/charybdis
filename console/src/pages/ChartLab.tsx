@@ -99,7 +99,7 @@ export default function ChartLab() {
           </div>
         </div>
       </Card>
-      {candles.loading && <Spinner />}
+      {candles.loading && !candles.data && <Spinner />}
       {candles.error && <EmptyState error={candles.error} />}
       {candles.data && (
         <Card>
@@ -114,6 +114,7 @@ export default function ChartLab() {
             close={candles.data.close}
             overlays={overlays}
             panes={panes}
+            resetKey={`${candles.data.source}:${candles.data.market}`}
             height={560}
           />
         </Card>

@@ -48,7 +48,7 @@ function Study2Section() {
     const horizons = [...new Set(objs.map((o) => String(o.horizon)))]
     const groups = ['forced-flow', 'baseline'].map((wt, i) => ({
       name: wt,
-      color: i === 0 ? C.accent : C.muted,
+      color: i === 0 ? C.series[0] : C.baseline,
       items: objs
         .filter((o) => o.horizon === horizon && String(o.window_type).includes(wt === 'forced-flow' ? 'forced' : 'baseline'))
         .map(

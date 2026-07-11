@@ -66,7 +66,7 @@ export function scatterOption(cfg: {
       {
         type: 'scatter',
         symbolSize: 9,
-        itemStyle: { color: C.accent, opacity: 0.75 },
+        itemStyle: { color: C.series[0], opacity: 0.75 },
         data: cfg.points.map((p) => ({ name: p.name, value: [p.x, p.y] })),
       },
     ],
@@ -96,6 +96,9 @@ export function dotWhisker(
       name: g.name,
       type: 'custom' as const,
       silent: true,
+      // The legend swatch is taken from the first series bearing the group name —
+      // this one — so it must carry the group color too, not just the scatter.
+      itemStyle: { color: g.color },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       renderItem: (_p: any, api: any) => {
         const y = api.coord([0, api.value(2)])[1] + offset(gi)

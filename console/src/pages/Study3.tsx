@@ -35,7 +35,7 @@ function CensusSection() {
           hi: Number(o.mean_apr_ci_high) * 100,
         }),
       )
-    return { scatter, top: dotWhisker([{ name: 'mean APR', color: C.accent, items: topItems }], 'mean APR (%)') }
+    return { scatter, top: dotWhisker([{ name: 'mean APR', color: C.series[0], items: topItems }], 'mean APR (%)') }
   }, [rows.data])
   if (rows.loading) return <Spinner />
   if (rows.error) return <EmptyState error={rows.error} />
@@ -70,7 +70,7 @@ function ClockSection() {
       [
         {
           name: 'funding bracket',
-          color: C.accent,
+          color: C.series[0],
           items: objs.map(
             (o): CIItem => ({
               label: label(o),
@@ -82,7 +82,7 @@ function ClockSection() {
         },
         {
           name: 'baseline',
-          color: C.muted,
+          color: C.baseline,
           items: objs.map(
             (o): CIItem => ({
               label: label(o),
@@ -169,7 +169,7 @@ function HazardSection() {
       [
         {
           name: 'event rate',
-          color: C.accent,
+          color: C.series[0],
           items: objs.map(
             (o): CIItem => ({
               label: String(o.funding_bucket),

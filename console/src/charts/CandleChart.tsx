@@ -4,6 +4,8 @@ import {
   ColorType,
   createChart,
   LineSeries,
+  type IChartApi,
+  type ISeriesApi,
   type Time,
 } from 'lightweight-charts'
 import { C } from '../theme'
@@ -25,6 +27,7 @@ export default function CandleChart({
   close,
   overlays,
   panes,
+  resetKey = '',
   height = 520,
 }: {
   time: number[]
@@ -34,9 +37,16 @@ export default function CandleChart({
   close: number[]
   overlays: OverlaySeries[]
   panes: Pane[]
+  /** Zoom/pan survive data updates; the viewport refits only when this changes. */
+  resetKey?: string
   height?: number
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const chartRef = useRef<IChartApi | null>(null)
+  const candleRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
+  const indicatorSeriesRef = useRef<ISeriesApi<'Line'>[]>([])
+  const fittedKeyRef = useRef<string | null>(null)
+
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -54,13 +64,28 @@ export default function CandleChart({
       timeScale: { timeVisible: true, borderColor: C.border },
       rightPriceScale: { borderColor: C.border },
     })
-    const candle = chart.addSeries(CandlestickSeries, {
+    candleRef.current = chart.addSeries(CandlestickSeries, {
       upColor: C.up,
       downColor: C.down,
       borderVisible: false,
       wickUpColor: C.up,
       wickDownColor: C.down,
     })
+    chartRef.current = chart
+    return () => {
+      chart.remove()
+      chartRef.current = null
+      candleRef.current = null
+      indicatorSeriesRef.current = []
+      fittedKeyRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    const chart = chartRef.current
+    const candle = candleRef.current
+    if (!chart || !candle) return
+    const view = chart.timeScale().getVisibleLogicalRange()
     candle.setData(
       time.map((t, i) => ({
         time: t as Time,
@@ -70,42 +95,39 @@ export default function CandleChart({
         close: close[i],
       })),
     )
+    for (const s of indicatorSeriesRef.current) chart.removeSeries(s)
+    indicatorSeriesRef.current = []
     const lineData = (values: (number | null)[]) =>
       time.map((t, i) =>
         values[i] == null ? { time: t as Time } : { time: t as Time, value: values[i] as number },
       )
     let ci = 0
-    const nextColor = () => C.series[ci++ % C.series.length]
-    for (const o of overlays) {
-      chart
-        .addSeries(LineSeries, {
-          color: nextColor(),
+    const addLine = (name: string, values: (number | null)[], paneIndex?: number) => {
+      const series = chart.addSeries(
+        LineSeries,
+        {
+          color: C.series[ci++ % C.series.length],
           lineWidth: 2,
           priceLineVisible: false,
           lastValueVisible: false,
-          title: o.name,
-        })
-        .setData(lineData(o.values))
+          title: name,
+        },
+        paneIndex,
+      )
+      series.setData(lineData(values))
+      indicatorSeriesRef.current.push(series)
     }
+    for (const o of overlays) addLine(o.name, o.values)
     panes.forEach((p, pi) => {
-      for (const s of p.series) {
-        chart
-          .addSeries(
-            LineSeries,
-            {
-              color: nextColor(),
-              lineWidth: 2,
-              priceLineVisible: false,
-              lastValueVisible: false,
-              title: s.name,
-            },
-            pi + 1,
-          )
-          .setData(lineData(s.values))
-      }
+      for (const s of p.series) addLine(s.name, s.values, pi + 1)
     })
-    chart.timeScale().fitContent()
-    return () => chart.remove()
-  }, [time, open, high, low, close, overlays, panes])
+    if (fittedKeyRef.current !== resetKey) {
+      chart.timeScale().fitContent()
+      fittedKeyRef.current = resetKey
+    } else if (view) {
+      chart.timeScale().setVisibleLogicalRange(view)
+    }
+  }, [time, open, high, low, close, overlays, panes, resetKey])
+
   return <div ref={ref} style={{ height }} />
 }
