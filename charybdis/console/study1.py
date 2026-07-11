@@ -10,11 +10,14 @@ from charybdis.console.tables import json_value
 
 _HORIZON_RE = re.compile(r"^net_markout_(\w+)_bps$")
 _DATASET = "study1_fills_l2"
+_UNIT_SECONDS = {"s": 1.0, "m": 60.0, "h": 3600.0}
 
 
 def _horizon_seconds(h: str) -> float:
-    m = re.match(r"([0-9.]+)s$", h)
-    return float(m.group(1)) if m else float("inf")
+    m = re.match(r"([0-9.]+)([smh])$", h)
+    if not m:
+        return float("inf")
+    return float(m.group(1)) * _UNIT_SECONDS[m.group(2)]
 
 
 def markout_summary() -> dict:

@@ -89,6 +89,8 @@ def console_data_dir(tmp_path, monkeypatch):
                         "segment": seg,
                         "net_markout_1s_bps": -1.0 - i * 0.1,
                         "stale_1s": i == 9,
+                        "net_markout_2m_bps": -3.0 - i * 0.1,
+                        "stale_2m": False,
                         "net_markout_30s_bps": -2.0 - i * 0.1,
                         "stale_30s": False,
                     }

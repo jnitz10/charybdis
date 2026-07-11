@@ -21,7 +21,7 @@ def test_findings_endpoint(console_data_dir):
 
 def test_study1_markout(console_data_dir):
     body = _client().get("/api/study1/markout").json()
-    assert body["horizons"] == ["1s", "30s"]  # fixture has these two families
+    assert body["horizons"] == ["1s", "30s", "2m"]  # sorted by seconds, not schema order
     assert set(body["segments"]) == {"RTH", "off-hours"}
     assert set(body["markets"]) == {"xyz:AAA", "km:BBB"}
     cell = next(
