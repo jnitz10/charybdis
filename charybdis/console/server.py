@@ -4,11 +4,20 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from charybdis.console import datasets
+from charybdis.console import datasets, tables
+
+
+def _check_present(name: str) -> None:
+    try:
+        present = datasets.dataset_exists(name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    if not present:
+        raise HTTPException(status_code=404, detail=f"dataset not present: {name}")
 
 
 def create_app() -> FastAPI:
@@ -21,6 +30,26 @@ def create_app() -> FastAPI:
     @app.get("/api/datasets")
     def list_datasets() -> list[dict]:
         return datasets.list_datasets()
+
+    @app.get("/api/datasets/{name}/schema")
+    def dataset_schema(name: str) -> dict:
+        _check_present(name)
+        return tables.dataset_schema(name)
+
+    @app.get("/api/datasets/{name}/rows")
+    def dataset_rows(
+        name: str,
+        page: int = 1,
+        page_size: int = 100,
+        sort: str | None = None,
+        order: str = "asc",
+        filter: list[str] = Query(default=[]),  # noqa: A002
+    ) -> dict:
+        _check_present(name)
+        try:
+            return tables.dataset_rows(name, page, page_size, sort, order, filter)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
 
     _mount_frontend(app)
     return app
