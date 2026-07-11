@@ -85,3 +85,9 @@ def test_registry_meta_shape():
     meta = {m["name"]: m for m in indicators.registry_meta()}
     assert meta["macd"]["params"] == {"fast": 12, "slow": 26, "signal": 9}
     assert meta["vwap"]["params"] == {}
+
+
+def test_registry_meta_returns_copies():
+    meta = {m["name"]: m for m in indicators.registry_meta()}
+    meta["macd"]["params"]["fast"] = 999
+    assert indicators.REGISTRY["macd"].params["fast"] == 12

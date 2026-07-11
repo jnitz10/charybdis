@@ -33,7 +33,7 @@ def indicator(name: str, params: dict[str, int | float], display: str):
 
 def registry_meta() -> list[dict]:
     return [
-        {"name": s.name, "params": s.params, "display": s.display}
+        {"name": s.name, "params": dict(s.params), "display": s.display}
         for s in REGISTRY.values()
     ]
 
