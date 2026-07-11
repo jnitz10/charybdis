@@ -1,0 +1,52 @@
+studies:
+  - id: study1
+    title: "Study 1 — Off-hours maker markout"
+    date: "2026-07-09"
+    verdict: "NULL — off-hours passive-maker markout is not better than RTH"
+    summary: >-
+      Net 30s passive-maker markout is negative in every market and session.
+      Off-hours CIs overlap RTH in 8/8 markets; the only separations are two
+      weekend cells better than RTH by under 0.1 bps. The L2 fill rule is an
+      optimistic upper bound.
+    numbers:
+      - { label: "Simulated fills", value: "2,204,391 across 694 market-days" }
+      - { label: "xyz:SP500 net 30s (RTH)", value: "-2.00 bps [-2.03, -1.97]" }
+      - { label: "Off-hours vs RTH", value: "CI overlap in 8/8 markets" }
+      - { label: "Assumed maker fee", value: "1.5 bps, 60s quote-age ceiling" }
+    page: "/studies-1-2"
+    report: "docs/reports/study1_offhours_markout_2026-07-09.md"
+  - id: study2
+    title: "Study 2 — Forced-flow proxy vs baseline"
+    date: "2026-07-09"
+    verdict: "NULL (confounded) — forced-flow markout indistinguishable from baseline"
+    summary: >-
+      No confirmed liquidations exist in HLSYSTEMEVENTS (0 of 1,070,342 rows);
+      all 2,573 events are heuristic proxy tags on SKHX/SMSN. Pooled 30s
+      forced-flow markout -1.56 bps vs baseline -1.79 bps, CIs overlap.
+      39.5% of windows dropped after 2026-06-18 quote poisoning; the
+      comparison is confounded and conservative.
+    numbers:
+      - { label: "Proxy events", value: "1,367 SKHX + 1,206 SMSN (0 confirmed liq.)" }
+      - { label: "Pooled forced-flow 30s", value: "-1.56 bps [-2.01, -1.13]" }
+      - { label: "Pooled baseline 30s", value: "-1.79 bps [-3.11, -0.85]" }
+      - { label: "Reversion half-life", value: "116.8 s mean (1,312 events)" }
+    page: "/studies-1-2"
+    report: "docs/reports/study2_forced_flow_2026-07-09.md"
+  - id: study3
+    title: "Study 3 — HIP-3 funding deep dive"
+    date: "2026-07-10"
+    verdict: "Funding is large but efficiently priced — no carry, no clock edge, no spread arb"
+    summary: >-
+      Mean APRs reach 203% (xyz:SHAZ) but persistence is short: 0/183 markets
+      pass the 24h half-life bar (median 1.3h, max 9.9h). Naive carry loses
+      badly (short-only-daily -70%); the hedged variant is NULL. Funding-clock
+      brackets do not separate in 12/12 cells. Twin-basis swamps the funding
+      edge in 57/57 cross-dex pairs. Funding does not time forced flow.
+    numbers:
+      - { label: "Top mean APR", value: "xyz:SHAZ 203.2% [123.4, 284.2]" }
+      - { label: "Carry-relevant markets", value: "0 of 183 (24h half-life bar)" }
+      - { label: "short-only-daily net", value: "-70.0% [-143.3, -0.2]" }
+      - { label: "single-name-hedged net", value: "+3.2% [-15.7, +19.2] (NULL)" }
+      - { label: "Cross-dex pairs viable", value: "0 of 57 (basis > funding edge)" }
+    page: "/study-3"
+    report: "docs/reports/summary_study3_2026-07-10.md"

@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from charybdis.console import backtests, candles, datasets, indicators, tables
+from charybdis.console import backtests, candles, datasets, findings, indicators, study1, tables
 
 
 def _check_present(name: str) -> None:
@@ -85,6 +85,15 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail=f"unknown backtest: {bt_id}")
         except FileNotFoundError as e:
             raise HTTPException(status_code=404, detail=f"dataset not present: {e}")
+
+    @app.get("/api/findings")
+    def get_findings() -> dict:
+        return findings.load_findings()
+
+    @app.get("/api/study1/markout")
+    def study1_markout() -> dict:
+        _check_present("study1_fills_l2")
+        return study1.markout_summary()
 
     _mount_frontend(app)
     return app
