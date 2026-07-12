@@ -140,6 +140,14 @@ class HyperliquidInfo:
             backoff = min(backoff * 2, 60.0)
         raise AssertionError("unreachable retry loop")
 
+    def l2_book(self, coin: str) -> dict[str, Any]:
+        """Return a live L2 book snapshot. Never cached (live data)."""
+
+        payload = self._post({"type": "l2Book", "coin": coin})
+        if not isinstance(payload, dict) or "levels" not in payload:
+            raise RuntimeError(f"unexpected l2Book payload for {coin}: {payload!r}")
+        return payload
+
     def perp_dexs(self, *, refresh: bool = False) -> list[str]:
         """Return the currently registered HIP-3 perp DEX names."""
 

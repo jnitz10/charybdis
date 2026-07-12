@@ -23,6 +23,7 @@ dependencies = [
 [project.scripts]
 charybdis-console = "charybdis.console.server:main"
 charybdis-ffs3 = "charybdis.ffs3:main"
+charybdis-forward = "charybdis.forward_test:main"
 
 [dependency-groups]
 dev = [

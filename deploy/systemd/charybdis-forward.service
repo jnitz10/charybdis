@@ -1,0 +1,10 @@
+[Unit]
+Description=Charybdis exhaustion-reversal shadow forward test (one tick)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/jnitz/Documents/trading/charybdis
+ExecStart=/home/jnitz/.local/bin/uv run charybdis-forward tick
+TimeoutStartSec=1200
